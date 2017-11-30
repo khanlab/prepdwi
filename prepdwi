@@ -4,7 +4,7 @@
 
 if [ "$#" -lt 3 ]
 then
- echo "Usage: $0 bids_dir output_dir {participant,group} "
+ echo "Usage: prepdwi bids_dir output_dir {participant,group} "
  echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
  echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
  echo ""
