@@ -73,4 +73,4 @@ export PATH=/opt/dke:$PATH
 
 
 %runscript
-exec /run.sh $@
+exec /prepdwi $@
