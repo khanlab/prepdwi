@@ -2,20 +2,6 @@
 
 
 
-if [ "$#" -lt 3 ]
-then
- echo "Usage: prepdwi bids_dir output_dir {participant,group} "
- echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
- echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
- echo ""
- exit 1
-fi
-in_bids=$1 
-out_folder=$2 
-analysis_level=$3
-
-
-shift 3
 
 while :; do
       case $1 in
@@ -62,6 +48,26 @@ while :; do
   done
 
 
+shift $((OPTIND-1))
+
+if [ "$#" -lt 3 ]
+then
+ echo "Usage: prepdwi <optional arguments> bids_dir output_dir {participant,group} "
+ echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
+ echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
+ echo ""
+ exit 1
+fi
+
+
+in_bids=$1 
+out_folder=$2 
+analysis_level=$3
+
+
+shift 3
+
+
 echo acq_label=$acq_label
 echo participant_label=$participant_label
 
@@ -69,7 +75,7 @@ if [ -e $in_bids ]
 then
 	in_bids=`realpath $in_bids`
 else
-	echo "ERROR: bids_dir does not exist!"
+	echo "ERROR: bids_dir $in_bids does not exist!"
 	exit 1
 fi
 
