@@ -5,7 +5,7 @@ VERSION = 0.0.1
 SINGULARITY_NAME=$(ORG)_$(NAME)_$(VERSION)
 
 BUILD_DIR=~/singularity
-REMOTE_BUILD_DIR=~/graham/singularity
+REMOTE_BUILD_DIR=~/graham/singularity/bids-apps
 
 build:
 	rm -f $(BUILD_DIR)/$(SINGULARITY_NAME).img

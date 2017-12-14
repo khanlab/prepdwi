@@ -1,7 +1,9 @@
 #!/bin/bash
 
 
-
+acq_label=
+participant_label=
+notopup=0
 
 while :; do
       case $1 in
@@ -9,6 +11,8 @@ while :; do
 	     usage
             exit
               ;;
+     --no-topup )
+	notopup=1;;
      --participant_label )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 participant_label=$2
@@ -55,6 +59,7 @@ then
  echo "Usage: prepdwi <optional arguments> bids_dir output_dir {participant,group} "
  echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
  echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
+ echo "          [--no-topup]"
  echo ""
  exit 1
 fi
@@ -120,7 +125,7 @@ Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring} | wc -l`
  processDwiDenoise uncorrected $subj
  processUnring uncorrected_denoise $subj
 
- if [ "$Ndwi" = "1" ] #simple but possibly naive way of determining when to use topup
+ if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
  then
  processEddyNoTopUp uncorrected_denoise_unring $subj
   eddy=eddy
