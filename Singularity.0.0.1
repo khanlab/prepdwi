@@ -1,5 +1,5 @@
 Bootstrap: shub
-From: akhanf/neuroglia-core
+From: khanlab/neuroglia-core
 
 %labels
 Maintainer "Ali Khan"
