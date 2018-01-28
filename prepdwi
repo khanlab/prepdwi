@@ -4,6 +4,8 @@
 acq_label=
 participant_label=
 notopup=0
+dke=0
+bedpost=0
 
 while :; do
       case $1 in
@@ -13,6 +15,10 @@ while :; do
               ;;
      --no-topup )
 	notopup=1;;
+     --bedpost )
+	bedpost=1;;
+     --dke )
+	dke=1;;
      --participant_label )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 participant_label=$2
@@ -60,6 +66,8 @@ then
  echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
  echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
  echo "          [--no-topup]"
+ echo "          [--bedpost]"
+ echo "          [--dke]"
  echo ""
  exit 1
 fi
@@ -135,7 +143,31 @@ Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring} | wc -l`
   eddy=topup_eddy
  fi
 
-#  processBedpost uncorrected_denoise_unring_$eddy $subj
+  processRegT1 uncorrected_denoise_unring_$eddy $subj
+
+  processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $subj
+
+ 
+  #clean-up working vasst-dev folders (but retain internal structure to still allow later processing)
+  mkdir -p work/$subj/dwi
+  mv $subj/dwi/uncorrected* work/$subj/dwi
+
+
+  pushd work
+  #continue running pipelines
+  if [ "$bedpost" = 1 ]
+  then 
+    processBedpost work $subj
+  fi 
+
+  if [ "$dke" = 1 ]
+  then 
+    processDKE preprocessed $subj
+  fi 
+  popd
+
+ 
+
 done
 
 
