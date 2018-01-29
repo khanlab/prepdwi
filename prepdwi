@@ -1,12 +1,12 @@
 #!/bin/bash
 
 
-acq_label=
+matching_dwi=
 participant_label=
 notopup=0
 dke=0
 bedpost=0
-match_t1w=
+matching_T1w=
 
 while :; do
       case $1 in
@@ -34,33 +34,33 @@ while :; do
           --participant_label=)         # handle the case of an empty --participant=
          die 'error: "--participant_label" requires a non-empty option argument.'
           ;;
-     --acq_label )       # takes an option argument; ensure it has been specified.
+     --matching_dwi )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
-                acq_label=$2
+                matching_dwi=$2
                   shift
 	      else
-              die 'error: "--acq_label" requires a non-empty option argument.'
+              die 'error: "--matching_dwi" requires a non-empty option argument.'
             fi
               ;;
-     --acq_label=?*)
-          acq_label=${1#*=} # delete everything up to "=" and assign the remainder.
+     --matching_dwi=?*)
+          matching_dwi=${1#*=} # delete everything up to "=" and assign the remainder.
             ;;
-          --acq_label=)         # handle the case of an empty --acq=
-         die 'error: "--acq_label" requires a non-empty option argument.'
+          --matching_dwi=)         # handle the case of an empty --acq=
+         die 'error: "--matching_dwi" requires a non-empty option argument.'
           ;;
-     --matching-T1w )       # takes an option argument; ensure it has been specified.
+     --matching_T1w )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
-                match_t1w=$2
+                matching_T1w=$2
                   shift
 	      else
-              die 'error: "--matching-T1w" requires a non-empty option argument.'
+              die 'error: "--matching_T1w" requires a non-empty option argument.'
             fi
               ;;
-     --matching-T1w=?*)
-          match_t1w=${1#*=} # delete everything up to "=" and assign the remainder.
+     --matching_T1w=?*)
+          matching_T1w=${1#*=} # delete everything up to "=" and assign the remainder.
             ;;
-          --matching-T1w=)         # handle the case of an empty --acq=
-         die 'error: "--acq_label" requires a non-empty option argument.'
+          --matching_T1w=)         # handle the case of an empty --acq=
+         die 'error: "--matching_dwi" requires a non-empty option argument.'
           ;;
 
 
@@ -81,8 +81,8 @@ if [ "$#" -lt 3 ]
 then
  echo "Usage: prepdwi <optional arguments> bids_dir output_dir {participant,group} "
  echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
- echo "          [--acq_label=ACQ_LABEL[,ACQ_LABEL,...]]"
- echo "          [--matching-T1w=MATCHING_STRING"
+ echo "          [--matching_dwi=MATCHING_PATTERN"
+ echo "          [--matching_T1w=MATCHING_STRING"
  echo "          [--no-topup]"
  echo "          [--bedpost]"
  echo "          [--dke]"
@@ -99,7 +99,7 @@ analysis_level=$3
 shift 3
 
 
-echo acq_label=$acq_label
+echo matching_dwi=$matching_dwi
 echo participant_label=$participant_label
 
 if [ -e $in_bids ]
@@ -128,16 +128,16 @@ mkdir -p $out_folder
 pushd $out_folder
 echo $participants
 
-if [ -n "$acq_label" ]
+if [ -n "$matching_dwi" ]
 then
-  searchstring=_acq-\{${acq_label}\}\*dwi.nii.gz
+  searchstring_dwi=\*${matching_dwi}\*dwi.nii.gz
 else
-  searchstring=*dwi.nii.gz
+  searchstring_dwi=*dwi.nii.gz
 fi
 
-if [ -n "$match_t1w" ]
+if [ -n "$matching_T1w" ]
 then
-  searchstring_t1w=\{${match_t1w}\}\*T1w.nii.gz
+  searchstring_t1w=\*${matching_T1w}\*T1w.nii.gz
 else
   searchstring_t1w=*T1w.nii.gz
 fi
@@ -163,9 +163,12 @@ importT1 $in_t1w $subj
 preprocT1 $subj
 
  
-Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring} | wc -l`
+Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
  echo Ndwi=$Ndwi
- importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring}` $subj
+echo Found $Ndwi matching dwi, using all: 
+ eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}
+
+ importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj
  processDwiDenoise uncorrected $subj
  processUnring uncorrected_denoise $subj
 
