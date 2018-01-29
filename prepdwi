@@ -178,7 +178,7 @@ echo Found $Ndwi matching dwi, using all:
   eddy=eddy
  else
   processTopUp uncorrected_denoise_unring $subj
-  processEddy uncorrected_denoise_unring $subj
+  processEddy uncorrected_denoise_unring_topup $subj
   eddy=topup_eddy
  fi
 
@@ -189,7 +189,9 @@ echo Found $Ndwi matching dwi, using all:
  
   #clean-up working vasst-dev folders (but retain internal structure to still allow later processing)
   mkdir -p work/$subj/dwi
+  mkdir -p work/$subj/t1
   mv $subj/dwi/uncorrected* work/$subj/dwi
+  mv $subj/t1/* work/$subj/t1
 
 
   pushd work
