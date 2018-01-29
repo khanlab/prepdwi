@@ -1,6 +1,6 @@
 ORG=khanlab
 NAME=prepdwi
-VERSION = 0.0.1
+VERSION = 0.0.3a
 
 SINGULARITY_NAME=$(ORG)_$(NAME)_$(VERSION)
 
@@ -9,7 +9,7 @@ REMOTE_BUILD_DIR=~/graham/singularity/bids-apps
 
 build:
 	rm -f $(BUILD_DIR)/$(SINGULARITY_NAME).img
-	sudo singularity build $(BUILD_DIR)/$(SINGULARITY_NAME).img Singularity | tee build_$(SINGULARITY_NAME).log
+	sudo singularity build $(BUILD_DIR)/$(SINGULARITY_NAME).img Singularity.$(VERSION) | tee build_$(SINGULARITY_NAME).log
 	cp -vf $(BUILD_DIR)/$(SINGULARITY_NAME).img $(REMOTE_BUILD_DIR)/$(SINGULARITY_NAME).img
 
 
