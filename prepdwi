@@ -123,9 +123,12 @@ dwi_prefix=uncorrected
 
 participants=$in_bids/participants.tsv
 
-mkdir -p $out_folder
+work_folder=$out_folder/work
+derivatives=$out_folder/derivatives #bids derivatives
 
-pushd $out_folder
+mkdir -p $work_folder $derivatives
+
+pushd $work_folder
 echo $participants
 
 if [ -n "$matching_dwi" ]
@@ -184,17 +187,11 @@ echo Found $Ndwi matching dwi, using all:
 
   processRegT1 uncorrected_denoise_unring_$eddy $subj
 
+  
   processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $subj
+  mv derivatives/$subj $derivatives
+   
 
- 
-  #clean-up working vasst-dev folders (but retain internal structure to still allow later processing)
-  mkdir -p work/$subj/dwi
-  mkdir -p work/$subj/t1
-  mv $subj/dwi/uncorrected* work/$subj/dwi
-  mv $subj/t1/* work/$subj/t1
-
-
-  pushd work
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
@@ -205,7 +202,6 @@ echo Found $Ndwi matching dwi, using all:
   then 
     processDKE preprocessed $subj
   fi 
-  popd
 
  
 
