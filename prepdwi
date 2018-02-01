@@ -157,6 +157,12 @@ fi
 for subj in $subjlist 
 do
 
+#add on sub- if not exists
+if [ ! "${subj:0:4}" = "sub-" ]
+then
+  subj="sub-$subj"
+fi
+
 
 N_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | wc -l`
 in_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | head -n 1`

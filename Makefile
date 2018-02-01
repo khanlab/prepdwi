@@ -1,6 +1,6 @@
 ORG=khanlab
 NAME=prepdwi
-VERSION = 0.0.3a
+VERSION = 0.0.3c
 
 SINGULARITY_NAME=$(ORG)_$(NAME)_$(VERSION)
 
