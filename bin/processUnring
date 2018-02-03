@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# dependencies:  unring
+# precondition:  importDWI
+
+if [ "$#" -lt 1 ]
+then
+ echo " writes output to dwi/<input>_unring"
+ echo ""
+ echo "Command-line Usage: $0 <in_uncorrected>  <subjid>"
+ exit 0
+fi
+
+output_dir=.
+
+in_uncorrected=$1
+out_name=${in_uncorrected}_unring
+shift 1
+
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+dwi_dir=$subj_dir/dwi
+uncorr_dir=$dwi_dir/$in_uncorrected
+
+
+unring_dir=$dwi_dir/$out_name
+mkdir -p $unring_dir
+
+
+for dwi in `ls $uncorr_dir/dwi*.nii.gz`
+do
+
+bvec=${dwi%%.nii.gz}.bvec
+bval=${dwi%%.nii.gz}.bval
+json=${dwi%%.nii.gz}.json
+
+suffix=${dwi##*/}
+
+ unring_dwi=$unring_dir/$suffix
+ unring_bvec=${unring_dwi%%.nii.gz}.bvec
+ unring_bval=${unring_dwi%%.nii.gz}.bval
+ unring_json=${unring_dwi%%.nii.gz}.json
+
+ mkdir -p $unring_dir
+
+ 
+ 
+  echo unring $dwi $unring_dwi 
+  unring $dwi $unring_dwi 
+
+
+  cp -v $bvec $unring_bvec
+  cp -v $bval $unring_bval
+  cp -v $json $unring_json
+ 
+
+done
+
+done

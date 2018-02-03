@@ -1,0 +1,115 @@
+#!/bin/bash
+
+#dependencies: fsl (eddy, fslmerge)
+#precondition: processTopup
+
+if [ "$#" -lt 2 ]
+then
+ echo "Writes output to dwi/<in_topup>_eddy"
+ echo "Usage $0 <in_topup> <subjid/list>"
+ exit 0
+fi
+
+output_dir=`pwd`
+
+in_topup=$1
+out_eddy=${in_topup}_eddy
+shift 1
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+
+topup_dir=$subj_dir/dwi/${in_topup}  #change this just to topup and eddy later..
+eddy_dir=$subj_dir/dwi/${out_eddy}
+
+
+eddy_work=$eddy_dir/work
+topup_work=$topup_dir/work
+
+mkdir -p $eddy_dir $eddy_work
+#req'd images: dwi_1, dwi_2, hifi, 
+brainmask=$topup_dir/brainmask.nii.gz
+
+
+Nacq=`ls -1 $topup_work/dwi_[0-9].nii.gz | wc -l`
+
+#if repeat dwi exist:
+if [ "$Nacq" -lt 2 ]
+then
+ echo "multiple dwi acquisitions do not exist, unable to continue!"
+ exit 0
+fi
+
+echo fslmerge  -t  $eddy_work/dwi_uncorrected.nii.gz $topup_work/dwi_?.nii.gz 
+fslmerge  -t  $eddy_work/dwi_uncorrected.nii.gz $topup_work/dwi_?.nii.gz 
+rm -f $eddy_work/dwi_uncorrected.bval
+rm -f $eddy_work/dwi_uncorrected.bvec
+
+#now need to merge bval/bvec
+for val in $( for bval in `ls $topup_work/dwi_?.bval`; do cat $bval; done; ) 
+do
+echo -n "$val " >> $eddy_work/dwi_uncorrected.bval
+done
+echo "" >> $eddy_work/dwi_uncorrected.bval
+
+for i in `seq 1 3`
+do
+
+for vec in  $( for bvec in `ls $topup_work/dwi_?.bvec`; do  cat $bvec | head -n $i | tail -n 1; done; ) 
+do
+echo -n "$vec " >> $eddy_work/dwi_uncorrected.bvec
+done
+echo "" >> $eddy_work/dwi_uncorrected.bvec
+
+done
+
+for iacq in `seq 1 $Nacq`
+do
+
+Ni[$iacq]=`fslval $topup_work/dwi_${iacq}.nii.gz dim4`
+
+done
+
+
+#creates index without assumption of same N repeated across each acquisition
+indx=""; 
+for iacq in `seq 1 $Nacq`
+do
+	for i in `seq 1 ${Ni[$iacq]}`; do indx="$indx $iacq"; done; 
+done
+
+echo $indx > $eddy_work/index.txt
+
+
+
+echo eddy --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v
+eddy --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v
+
+dwi_bvec=$eddy_dir/dwi.eddy_rotated_bvecs
+dwi_bval=$eddy_work/dwi_uncorrected.bval
+dwi_vol=$eddy_dir/dwi.nii.gz
+
+cp -v $dwi_bvec $eddy_dir/dwi.bvec
+cp -v $dwi_bval $eddy_dir/dwi.bval
+cp -v $brainmask $eddy_dir/brainmask.nii.gz
+
+echo dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $dwi_bvec -b $dwi_bval
+dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
+
+
+done
+
+

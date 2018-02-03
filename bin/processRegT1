@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# dependencies: preprocT1, dwi/<in_dwi_name>/dti_S0.nii.gz
+#		 
+# precondition:  importDWI
+
+if [ "$#" -lt 1 ]
+then
+ echo " writes output to dwi/<input>_regT1"
+ echo ""
+ echo "Command-line Usage: $0 <in_dwi_name>  <subjid>"
+ exit 0
+fi
+
+output_dir=.
+
+in_dwi=$1
+out_name=${in_dwi}_regT1
+shift 1
+
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+dwi_dir=$subj_dir/dwi/${in_dwi}
+out_dir=$subj_dir/dwi/${out_name}
+t1_dir=$subj_dir/t1
+
+mkdir -p $out_dir
+
+dwi_bvec=$dwi_dir/dwi.bvec
+dwi_bval=$dwi_dir/dwi.bval
+dwi_vol=$dwi_dir/dwi.nii.gz
+brain_mask=$dwi_dir/brainmask.nii.gz
+
+#assume dtifit has been run (default in topup/eddy/etc) to get S0 image
+b0=$dwi_dir/dti_S0.nii.gz
+
+#get b0 scan
+if [ ! -e $b0 ]
+then
+ #run dtifit (since should have been run anyways, and is quick..) 
+ echo dtifit -k $dwi_vol -o $dwi_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
+ dtifit -k $dwi_vol -o $dwi_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
+fi
+
+t1=$t1_dir/t1.nii.gz
+t1_brain=$t1_dir/t1.brain.inorm.nii.gz
+
+epireg_work=$out_dir/epi_reg
+mkdir -p $epireg_work
+
+out_prefix=$epireg_work/b0_to_t1
+
+#run epi reg
+echo epi_reg --epi=$b0 --t1=$t1 --t1brain=$t1_brain --out=$out_prefix --noclean
+epi_reg --epi=$b0 --t1=$t1 --t1brain=$t1_brain --out=$out_prefix --noclean
+
+xfm_b0_t1=$out_prefix.mat
+
+diff_res=`fslval $b0 pixdim1`
+t1_ref=$epireg_work/t1_diffres.nii.gz
+
+#rotate bvec
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+#copy bval
+echo cp $dwi_bval $out_dir/dwi.bval
+cp $dwi_bval $out_dir/dwi.bval
+
+#generate reference at dwi resolution in t1 space
+echo flirt -in $t1 -ref $t1 -applyisoxfm $diff_res -out $t1_ref
+flirt -in $t1 -ref $t1 -applyisoxfm $diff_res -out $t1_ref
+
+
+if [ "$grad_correct" = 1 ]
+then
+ echo not implemented yet
+
+else
+ #resample dwi to t1 space 
+ echo flirt -in $dwi_vol -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
+ flirt -in $dwi_vol -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
+ echo flirt -in $brain_mask -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
+ flirt -in $brain_mask -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
+fi
+
+dwi_bvec=$out_dir/dwi.bvec
+dwi_bval=$out_dir/dwi.bval
+dwi_vol=$out_dir/dwi.nii.gz
+brain_mask=$out_dir/brainmask.nii.gz
+
+echo dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
+dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
+
+
+done

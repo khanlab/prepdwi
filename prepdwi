@@ -1,22 +1,28 @@
 #!/bin/bash
 
+function die {
+ echo $1 >&2
+ exit 1
+}
 
 matching_dwi=
 participant_label=
 notopup=0
 dke=0
-bedpost=0
+bedpost=1
 matching_T1w=
+n_cpus=8
 
 if [ "$#" -lt 3 ]
 then
  echo "Usage: prepdwi bids_dir output_dir {participant,group} <optional arguments>"
- echo "          [--participant_label=PARTICIPANT_LABEL[,PARTICIPANT_LABEL,...]]"
- echo "          [--matching_dwi=MATCHING_PATTERN"
- echo "          [--matching_T1w=MATCHING_STRING"
+ echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
+ echo "          [--matching_dwi MATCHING_PATTERN"
+ echo "          [--matching_T1w MATCHING_STRING"
  echo "          [--no-topup]"
- echo "          [--bedpost]"
+ echo "          [--no-bedpost]"
  echo "          [--dke]"
+ echo "          [--n_cpus] NCPUS (for bedpost, default: 8) "
  echo ""
  exit 1
 fi
@@ -39,10 +45,19 @@ while :; do
               ;;
      --no-topup )
 	notopup=1;;
-     --bedpost )
-	bedpost=1;;
+     --no-bedpost )
+	bedpost=0;;
      --dke )
 	dke=1;;
+     --n_cpus )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                n_cpus=$2
+                  shift
+	      else
+              die 'error: "--n_cpus" requires a non-empty option argument.'
+            fi
+              ;;
+
      --participant_label )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 participant_label=$2
@@ -126,7 +141,7 @@ dwi_prefix=uncorrected
 participants=$in_bids/participants.tsv
 
 work_folder=$out_folder/work
-derivatives=$out_folder/derivatives #bids derivatives
+derivatives=$out_folder #bids derivatives
 
 mkdir -p $work_folder $derivatives
 
@@ -135,16 +150,16 @@ echo $participants
 
 if [ -n "$matching_dwi" ]
 then
-  searchstring_dwi=\*${matching_dwi}\*dwi.nii.gz
+  searchstring_dwi=\*${matching_dwi}\*dwi.nii*
 else
-  searchstring_dwi=*dwi.nii.gz
+  searchstring_dwi=*dwi.nii*
 fi
 
 if [ -n "$matching_T1w" ]
 then
-  searchstring_t1w=\*${matching_T1w}\*T1w.nii.gz
+  searchstring_t1w=\*${matching_T1w}\*T1w.nii*
 else
-  searchstring_t1w=*T1w.nii.gz
+  searchstring_t1w=*T1w.nii*
 fi
 
 
@@ -170,48 +185,100 @@ N_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | wc -l`
 in_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | head -n 1`
 
 echo Found $N_t1w matching T1w, using first found: $in_t1w
+if [ ! -e $subj/t1/t1.nii.gz ]
+then
+echo importT1 $in_t1w $subj
 importT1 $in_t1w $subj
-preprocT1 $subj
+fi
 
+if [ ! -e $subj/t1/t1.brain.inorm.nii.gz ]
+then
+preprocT1 $subj
+fi
  
 Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
+
+ if [ ! -e $subj/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
+ then
+
  echo Ndwi=$Ndwi
 echo Found $Ndwi matching dwi, using all: 
  eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}
 
+ echo "importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj"
  importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj
+
+ fi
+
+ if [ ! -e $subj/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
+ then
+ echo processDwiDenoise uncorrected $subj
  processDwiDenoise uncorrected $subj
+ fi
+
+ if [ ! -e $subj/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
+ then
+ echo processUnring uncorrected_denoise $subj
  processUnring uncorrected_denoise $subj
+ fi
+
 
  if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
  then
- processEddyNoTopUp uncorrected_denoise_unring $subj
-  eddy=eddy
+ 
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
+  then
+   echo processEddyNoTopUp uncorrected_denoise_unring $subj
+   processEddyNoTopUp uncorrected_denoise_unring $subj
+  fi
+  
+   eddy=eddy
  else
-  processTopUp uncorrected_denoise_unring $subj
-  processEddy uncorrected_denoise_unring_topup $subj
+
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
+  then 
+    echo processTopUp uncorrected_denoise_unring $subj
+    processTopUp uncorrected_denoise_unring $subj
+  fi
+
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
+  then
+    echo processEddy uncorrected_denoise_unring_topup $subj
+    processEddy uncorrected_denoise_unring_topup $subj
+  fi
   eddy=topup_eddy
  fi
 
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_$eddy/dwi.nii.gz ]
+  then
+  echo processRegT1 uncorrected_denoise_unring_$eddy $subj
   processRegT1 uncorrected_denoise_unring_$eddy $subj
+  fi
 
   
-  processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $subj
-  mv derivatives/$subj $derivatives
    
 
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
-    processBedpost work $subj
+    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/bedpost.bedpostX/dyads1.nii.gz ]
+    then
+    echo processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
+    processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
+    fi
   fi 
 
   if [ "$dke" = 1 ]
   then 
-    processDKE preprocessed $subj
+    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1_dke/kmean.nii.gz ]
+    then
+    echo processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
+    processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
+    fi
   fi 
 
  
+  processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $derivatives $subj
 
 done
 

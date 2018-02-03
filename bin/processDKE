@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# dependencies: octave, dke
+# precondition:  processEddy
+
+if [ "$#" -lt 2 ]
+then
+ echo "Reads data from ./<subjid>/dwi/<in_dwi>, writes output to ./<subjid>/dwi/<in_dwi_name>_dke"
+ echo "Usage $0 <in_dwi_name> <subjid/list>"
+ echo " "
+ echo " e.g.: "
+ echo "   $0 ~/EpilepsyDatabase/EPL14B ~/test_dke multiband_topup_eddy EPL14_LHS_0066"
+ exit 0
+fi
+
+
+output_dir=.
+
+in_name=$1
+out_name=${in_name}_dke
+shift 1
+
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi  
+
+
+
+
+for subj in $subjids
+do
+
+
+in_subj_dir=$output_dir/$subj
+out_subj_dir=$output_dir/$subj
+
+in_dwi_dir=$in_subj_dir/dwi/$in_name
+out_dwi_dir=$out_subj_dir/dwi/$out_name
+
+echo $subj
+#put pipeline commands here
+
+
+mkdir -p $out_dwi_dir
+
+in_dwi_prefix=$in_dwi_dir/dwi
+out_dwi_prefix=$out_dwi_dir/dwi_prep
+
+echo octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix',[1300, 2600])"
+octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix',[1300, 2600])"
+
+dke_param=${out_dwi_prefix}.dke_params
+
+#note that this uses the run_dke wrapper from neuroglia-vasst-dev
+echo run_dke $dke_param
+run_dke $dke_param
+
+#gzip output niftis 
+for nii in `ls $out_dwi_dir/*.nii`
+do 
+  gzip $nii
+done
+
+done
+
+
