@@ -1,0 +1,204 @@
+#!/bin/bash
+
+# dependencies: octave, getDiffPhaseEncodeLine.m (from vasst-dev)
+#		 fsl (bet, topup, dtifit, ...)
+# precondition:  importBlippedDWI
+
+if [ "$#" -lt 1 ]
+then
+ echo " writes output to dwi/<input>_topup"
+ echo ""
+ echo "Command-line Usage: $0 <in_uncorrected>  <subjid>"
+ exit 0
+fi
+
+output_dir=.
+
+in_uncorrected=$1
+out_name=${in_uncorrected}_topup
+shift 1
+
+
+for subj in $@
+do
+
+
+subj_dir=$output_dir/$subj
+dwi_dir=$subj_dir/dwi
+
+uncorr_dir=$dwi_dir/$in_uncorrected
+
+N=`ls $uncorr_dir/dwi_[0-9].nii.gz | wc -l`
+
+if [ "$N" -lt 2 ]
+then
+  echo $subj does not have more enough dwi_# scans imported
+  continue
+fi
+
+distort_dir=$dwi_dir/$out_name
+mkdir -p $distort_dir
+
+work_dir=$distort_dir/work
+mkdir -p $work_dir
+
+for i in `seq 1 $N`
+do
+ in_dwi[$i]=$uncorr_dir/dwi_$i.nii.gz
+ in_json[$i]=$uncorr_dir/dwi_$i.json
+ in_bval[$i]=$uncorr_dir/dwi_$i.bval
+ in_bvec[$i]=$uncorr_dir/dwi_$i.bvec
+
+done
+
+
+
+#get phase encode lines for each dwi
+
+
+
+#echo "N: $N"
+#for i in `seq 1 $N`
+#do
+# echo in_dwi: ${in_dwi[$i]}
+
+
+#done
+
+
+petxt=$work_dir/pedir.txt
+rm -f $petxt
+
+cd `pwd`
+
+#get b0 volumes from each dwi
+for i in `seq 1 $N`
+do
+petxt_i=$work_dir/pedir_$i.txt
+echo octave --eval "getDiffPhaseEncodeLine('${in_dwi[$i]}','$petxt_i')"
+ octave --eval "getDiffPhaseEncodeLine('${in_dwi[$i]}','$petxt_i')"
+
+
+cat $petxt_i >> $petxt
+
+dwi=$work_dir/dwi_$i.nii.gz
+bvec=$work_dir/dwi_$i.bvec
+bval=$work_dir/dwi_$i.bval
+cp -v ${in_dwi[$i]} $dwi
+cp -v ${in_bvec[$i]} $bvec #not used until later eddy
+cp -v ${in_bval[$i]} $bval
+
+
+#keep number of directions, and volume wiht greatest number of directions
+num_dirs[$i]=`fslval $dwi dim4`
+
+
+if [ "$i" = "1" ]
+then 
+  dwi_list=$dwi
+else
+  dwi_list="$dwi_list,$dwi"
+fi
+
+
+
+#crop for even # of slices
+nslices=`fslval $dwi dim3`
+isodd=`expr $nslices % 2`
+if [ "$isodd" = "1" ]
+then 
+  echo cropping out single slice to have even number of slices
+  echo fslroi $dwi $dwi 0 -1 0 -1 1 -1 0 -1
+  fslroi $dwi $dwi 0 -1 0 -1 1 -1 0 -1
+fi
+  
+
+#get b0 images
+bval_thresh=50
+ di=0
+ for bv in `cat ${in_bval[$i]}`
+ do
+  b0img=$work_dir/dwi_$i.b0_$di.nii.gz
+ if [ "$bv" -lt $bval_thresh ]
+ then
+  echo $bv
+  fslroi $dwi  $b0img $di 1
+ fi
+  
+ di=$((di+1))
+ done #bval
+
+
+
+ #create avg b0
+ avg_b0=$work_dir/avg_b0_$i.nii.gz
+ echo fslmerge -t $avg_b0 $work_dir/dwi_$i.b0_*.nii.gz
+ fslmerge -t $avg_b0 $work_dir/dwi_$i.b0_*.nii.gz
+ echo fslmaths $avg_b0 -Tmean $avg_b0
+ fslmaths $avg_b0 -Tmean $avg_b0
+
+
+done #i
+
+
+avg_b0=$work_dir/avg_b0.nii.gz
+echo fslmerge -t $avg_b0 $work_dir/avg_b0_?.nii.gz
+fslmerge -t $avg_b0 $work_dir/avg_b0_?.nii.gz
+
+
+
+
+
+echo topup --imain=$avg_b0 --datain=$petxt --config=b02b0.cnf --out=$work_dir/topup -v --iout=$work_dir/hifi
+topup --imain=$avg_b0 --datain=$petxt --config=b02b0.cnf --out=$work_dir/topup -v --iout=$work_dir/hifi
+
+bvec=$distort_dir/dwi.bvec
+bval=$distort_dir/dwi.bval
+dwi=$distort_dir/dwi.nii.gz
+brainmask=$distort_dir/brainmask.nii.gz
+
+
+#if num directions of final dwi is less than first, then assume we are only using the first scan
+
+echo numdirs N: ${num_dirs[$N]}
+echo numdirs 1: ${num_dirs[1]}
+if [ "${num_dirs[$N]}" -lt "${num_dirs[1]}" ]
+then
+  #use first vol as ind
+  indices=1
+  dwi_list=$work_dir/dwi_1.nii.gz
+
+echo applytopup --imain=$dwi_list --datain=$petxt --inindex=$indices -t $work_dir/topup -o $distort_dir/dwi -v --method=jac
+applytopup --imain=$dwi_list --datain=$petxt --inindex=$indices -t $work_dir/topup -o $distort_dir/dwi -v --method=jac
+cp -v ${in_bvec[1]} $bvec
+cp -v ${in_bval[1]} $bval
+
+
+else
+
+  
+
+indices=`seq -s , 1 $N`
+
+echo applytopup --imain=$dwi_list --datain=$petxt --inindex=$indices -t $work_dir/topup -o $distort_dir/dwi -v
+applytopup --imain=$dwi_list --datain=$petxt --inindex=$indices -t $work_dir/topup -o $distort_dir/dwi -v
+cp -v ${in_bvec[$N]} $bvec
+cp -v ${in_bval[$N]} $bval
+
+fi
+
+echo bet $dwi $brainmask -f 0.1
+bet $dwi $brainmask -f 0.1
+echo fslmaths $brainmask -bin $brainmask
+fslmaths $brainmask -bin $brainmask
+
+echo dtifit -k $dwi -o $distort_dir/dti -m $brainmask -r $bvec -b $bval
+dtifit -k $dwi -o $distort_dir/dti -m $brainmask -r $bvec -b $bval
+
+
+
+
+
+
+done
+
