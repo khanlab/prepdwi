@@ -1,0 +1,76 @@
+#!/bin/bash
+ 
+#MAN SYNOPSIS Pre-processes T1 images (skull-strip, intensity normalize)
+#MAN OPTIONS Currently does not take any options.  TODO: add option for setting bet parameters
+#MAN DEPENDENCIES importT1
+#MAN OUTPUT t1/t1.brain.nii.gz, t1/t1.brain.inorm.nii.gz
+
+ 
+if [ "$#" -lt 1 ]
+then
+ echo "Usage $0 <subjid/list>"
+ exit 0
+fi
+
+output_dir=.
+
+
+
+#betopts="-f 0.5 -R"
+#betopts="-f 0.3 -B"
+betopts="-f 0.5 -B"
+betopts="-f 0.4 -B"
+
+#betopts="-f 0.4 -B -c 95 107 163 -v"   # settings for pennylab dti
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+t1_dir=$subj_dir/t1
+xfm_dir=$subj_dir/xfms
+
+t1=$t1_dir/t1.nii.gz
+
+
+bet_t1=$t1_dir/t1.brain.nii.gz
+brainmask=$t1_dir/brainmask.nii.gz
+
+if [ -e $brainmask ]
+then
+ echo fslmaths $t1 -mas $brainmask $bet_t1
+ fslmaths $t1 -mas $brainmask $bet_t1
+
+
+else
+
+#skull strip 
+echo bet $t1 $bet_t1 $betopts
+bet $t1 $bet_t1 $betopts
+echo fslmaths $bet_t1 -bin $brainmask
+fslmaths $bet_t1 -bin $brainmask
+
+
+fi
+
+
+#N4 bias field correction, and intensity normalize to mean 100 
+norm_t1=$t1_dir/t1.brain.inorm.nii.gz
+echo N4BiasFieldCorrection -i $bet_t1 -o $norm_t1
+N4BiasFieldCorrection -i $bet_t1 -o $norm_t1
+echo fslmaths $norm_t1 -inm 0.5 $norm_t1
+fslmaths $norm_t1 -inm 0.5 $norm_t1
+
+
+done

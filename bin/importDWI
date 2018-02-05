@@ -21,7 +21,7 @@ for i in `seq 1 $N`
 do
  in_dwi[$i]=$1
 
- ext=${in_dwi##*/}
+ ext=${in_dwi[$i]##*.}
  if [ "$ext" = "nii" ]
  then
  in_json[$i]=${1%%.nii}.json
@@ -59,7 +59,7 @@ mkdir -p $uncorr_dir
 
 for i in `seq 1 $N`
 do
- ext=${in_dwi[$i]##*/}
+ ext=${in_dwi[$i]##*.}
  if [ "$ext" = "nii" ]
  then
  cp -v ${in_dwi[$i]} $uncorr_dir/dwi_$i.nii

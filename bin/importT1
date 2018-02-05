@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#in_t1=`zenity --file-selection  --title="Choose T1-w image file to import"`
+
+if [ "$#" -lt 2 ]
+then
+ echo "Usage $0 <input T1w image> <subjid>"
+ exit 0
+fi
+
+in_t1=$1
+subj=$2
+output_dir=.
+
+
+t1_dir=$output_dir/$subj/t1
+mkdir -p $t1_dir
+
+t1=$t1_dir/t1.nii.gz
+
+ext=${in_t1##*.}
+if [ "$ext" = "gz" ]
+then
+  cp $in_t1 $t1
+else
+
+if [ "$ext" = "mha" -o "$ext" = "mhd" -o "$ext" = "nrrd" -o "$ext" = "nhdr" ]
+then
+c3d $in_t1 -o $t1
+else
+mri_convert $in_t1 $t1
+fi
+fi
+#fslreorient2std $t1 $t1
+
+
+
