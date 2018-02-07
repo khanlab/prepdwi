@@ -249,7 +249,7 @@ echo Found $Ndwi matching dwi, using all:
   eddy=topup_eddy
  fi
 
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_$eddy/dwi.nii.gz ]
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
   then
   echo processRegT1 uncorrected_denoise_unring_$eddy $subj
   processRegT1 uncorrected_denoise_unring_$eddy $subj
