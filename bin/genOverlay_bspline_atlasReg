@@ -1,0 +1,68 @@
+#!/bin/bash
+
+if [ "$#" -lt 2 ]
+then
+ echo "Usage $0 <atlas_name> <subjid/list>"
+ exit 0
+fi
+
+output_dir=.
+
+# generate quickchecks for overlays
+	#general usage for per-subj processing is to specify the two images to compare, and generate an overlay of these
+	#put it in quickchecks folder, named according to processing
+	#could then be a command for creating report html files
+atlas_name=$1
+
+shift 1
+
+
+qc_dir=QC
+mkdir -p $qc_dir
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$@
+fi
+
+
+output_list=""
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+
+#put pipeline commands here
+
+
+if [ -e $output_dir/$atlas_name/t1/t1.brain.nii.gz ]
+then
+ t1=$output_dir/$atlas_name/t1/t1.brain.nii.gz
+else
+ t1=$PIPELINE_ATLAS_DIR/$atlas_name/t1/t1.brain.nii.gz
+fi
+ 
+
+
+overlay=$subj_dir/reg/bspline_f3d_t1/${atlas_name}_$subj/${subj}_to_${atlas_name}.nreg.nii.gz
+
+
+
+output_list="$output_list $t1 $overlay"
+
+
+done
+
+slicesdir -o $output_list
+
+out_dir=$qc_dir/atlas_bspline_reg_${atlas_name}_`timestamp`
+mv slicesdir $out_dir
+
+echo "Use this to view:"
+echo "chromium-browser $out_dir/index.html"
+

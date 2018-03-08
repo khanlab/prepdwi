@@ -12,6 +12,9 @@ dke=0
 bedpost=1
 matching_T1w=
 n_cpus=8
+reg_init_subj=
+
+atlas_space=MNI152Nlin2009cAsym
 
 if [ "$#" -lt 3 ]
 then
@@ -19,6 +22,9 @@ then
  echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
  echo "          [--matching_dwi MATCHING_PATTERN"
  echo "          [--matching_T1w MATCHING_STRING"
+ echo "          [--reg_init_participant PARTICIPANT_LABEL"
+ echo "          [--atlas_label_nii NIFTI" 
+ echo "          [--atlas_label_csv LABEL_INDEX_CSV"
  echo "          [--no-topup]"
  echo "          [--no-bedpost]"
  echo "          [--dke]"
@@ -100,6 +106,24 @@ while :; do
           --matching_T1w=)         # handle the case of an empty --acq=
          die 'error: "--matching_dwi" requires a non-empty option argument.'
           ;;
+      --reg_init_participant )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                reg_init_subj=$2
+                  shift
+	      else
+              die 'error: "--reg_init_participant" requires a non-empty option argument.'
+            fi
+              ;;
+     --reg_init_participant=?*)
+          reg_init_subj=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --reg_init_participant=)         # handle the case of an empty --participant=
+         die 'error: "--reg_init_participant" requires a non-empty option argument.'
+          ;;
+
+      
+
+
 
 
       -?*)
@@ -128,14 +152,6 @@ else
 fi
 
 
-if [ "$analysis_level" = "participant" ]
-then
- echo " running participant level analysis"
- else
-  echo "only participant level analysis is enabled"
-  exit 0
-fi
-
 dwi_prefix=uncorrected
 
 participants=$in_bids/participants.tsv
@@ -144,6 +160,21 @@ work_folder=$out_folder/work
 derivatives=$out_folder #bids derivatives
 
 mkdir -p $work_folder $derivatives
+
+
+if [ -n "$participant_label" ]
+then
+subjlist=`echo $participant_label | sed  's/,/\ /g'` 
+else
+subjlist=`tail -n +2 $participants | awk '{print $1}'`
+fi
+
+
+
+if [ "$analysis_level" = "participant" ]
+then
+ echo " running participant level analysis"
+
 
 pushd $work_folder
 echo $participants
@@ -160,15 +191,6 @@ then
   searchstring_t1w=\*${matching_T1w}\*T1w.nii*
 else
   searchstring_t1w=*T1w.nii*
-fi
-
-
-
-if [ -n "$participant_label" ]
-then
-subjlist=`echo $participant_label | sed  's/,/\ /g'` 
-else
-subjlist=`tail -n +2 $participants | awk '{print $1}'`
 fi
 
 for subj in $subjlist 
@@ -256,8 +278,6 @@ echo Found $Ndwi matching dwi, using all:
   fi
 
   
-   
-
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
@@ -284,3 +304,127 @@ done
 
 
 popd
+
+
+ elif [ "$analysis_level" = "participant2" ]
+ then
+
+
+     ## move this to basic participant level analysis later..
+
+   echo "participant2 level"
+   #perform MNI registration with T1w
+
+ pushd $work_folder
+
+   echo in_atlas_dir: $in_atlas_dir
+#copy atlases to output folder
+for atlas in `ls -d $in_atlas_dir/*`
+do
+ atlas_name=${atlas##*/}
+
+ #if atlas not copied, then:
+ if [ ! -e $atlas_name ]
+ then
+ #mkdir to ensure only one process copies the files..
+ if $(mkdir $atlas_name)
+ then
+   cp -Rv $atlas/* $atlas_name
+ else
+   sleep 30
+ fi
+ fi
+
+   if [ -n "$reg_init_subj" ]
+   then
+    reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
+    else
+   reg_intersubj_aladin  t1 $atlas_name $subj 
+   fi
+
+   reg_bspline_f3d t1 $atlas_name $subj
+
+ for label in `ls -d $atlas_name/labels/t1/*`
+ do
+   label_name=${label##*/}
+    
+   propLabels_reg_bspline_f3d t1 $label_name $atlas_name $subj
+ done #label
+
+done #atlas
+popd
+
+
+elif [ "$analysis_level" = "group1" ]
+ then
+
+    echo "generate preproc QC reports"
+
+    #need to make a subjlist for this command 
+    mkdir -p $work_folder/etc
+    qclist=$work_folder/etc/subjects
+    rm -f $qclist
+    touch $qclist
+    for subj in $subjlist
+    do
+        subj=`fixsubj $subj`
+        echo $subj >> $qclist
+    done
+    
+    pushd $work_dir
+    genOverlay_brainmask $qclist
+
+    for atlas in `ls -d $in_atlas_dir/*`
+    do
+     atlas_name=${atlas##*/}
+     genOverlay_affine_atlasReg $atlas_name $qclist
+     genOverlay_bspline_atlasReg $atlas_name $qclist
+    done
+
+popd
+
+    # we need QC for:
+
+    # brainmask
+    # T1 / MNI affine reg
+    # T1 / MNI nlin reg
+    # T1 / DWI rigid reg
+    # eddy stats
+    # color rgb??
+    # DWI overlaid with atlas labels??
+
+ elif [ "$analysis_level" = "participant3" ]
+ then
+
+
+   #network connectivity
+   echo "participant3 level"
+
+   #required options:
+
+   #import atlas_label_nii file  -> imports to labelgroup "imported"
+     #or:  
+   #existing label-group and nii filename
+  
+   mkdir -p $work_folder/$atlas_space/labels/t1/imported
+   cp -v $atlas_label_nii $work_folder/$atlas_space/labels/t1/imported
+   propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+
+
+   #atlas_label_csv
+
+   #need to loop through csv, extract labels, add to targets.txt file
+   #run probtractx with network mode 
+
+
+   #save to: 
+   #   bedpost/sub-XXX/probtrack.$atlas_name.$label_csv_name
+
+ else    
+  echo "unknown analysis level: $analysis_level"
+  
+
+  exit 0
+fi
+
+

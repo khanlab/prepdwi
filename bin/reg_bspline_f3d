@@ -1,0 +1,110 @@
+#!/bin/bash
+
+. functions_checkargs
+
+if [ "$#" -lt 3 ]
+then
+ echo ""
+ echo "Usage: ${0##*/} <img_type> <atlas_subj> <subjid/list> <options>"
+ echo "		-b bending energy value		Set bending energy penalty term (default 0.005)"
+ echo ""
+ echo " e.g. to register t1 catani atlas to test_subj use:"
+ echo "  $0 t1 catani test_subj"
+ 
+ exit 0
+fi
+
+reg_type=bspline_f3d
+
+output_dir=.
+
+img_type=$1 #e.g.: t1, dti, fmri
+atlas_subj=$2
+
+shift 2
+
+
+checkRegArgs
+
+
+#could put this in a config file as some point:
+atlas_nii=$atlas_dir/$img_path
+echo atlas_nii=$atlas_nii
+
+if [ ! -e $atlas_nii ]
+then
+  echo "$atlas_nii does not exist, exiting!"
+  exit 0
+fi
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+be=""
+shift 1
+while getopts "b:" options; do
+ case $options in
+    b ) echo "Using bending energy penalty: $OPTARG"
+        be="-be $OPTARG";;
+    * ) usage
+        exit 0;;
+ esac
+done
+
+for subj in $subjids
+do
+
+
+
+ subj_dir=$output_dir/$subj
+ subj_nii=$subj_dir/$img_path
+ echo "subj_nii=$subj_nii"
+ 
+ affine_reg_type=affine_aladin
+
+ affine_dir=$subj_dir/reg/${affine_reg_type}_${img_type}/${atlas_subj}_${subj}
+ out_dir=$subj_dir/reg/${reg_type}_${img_type}/${atlas_subj}_${subj}
+
+ mkdir -p $out_dir
+
+ xfm=$affine_dir/${subj}_to_${atlas_subj}.xfm
+ inv_xfm=$affine_dir/${atlas_subj}_to_${subj}.xfm
+
+
+ echo xfm: $xfm
+ echo inv_xfm $inv_xfm
+ if [ ! -e $xfm -o ! -e $inv_xfm ]
+ then 
+  echo "Error on $atlas_subj to $subj: Need to run reg_affine_aladin before reg_bspline_f3d!"
+  continue 
+ fi
+
+ cpp=$out_dir/ctrlpt_${atlas_subj}_to_${subj}.nii.gz
+ def=$out_dir/def_${atlas_subj}_to_${subj}.nii.gz
+ resampled=$out_dir/${atlas_subj}_to_${subj}.nreg.nii.gz
+
+ reg_f3d -ref $subj_nii -flo $atlas_nii -aff $inv_xfm -cpp $cpp -res $resampled $be #-gpu 
+ reg_transform -ref $subj_nii -cpp2def $cpp $def
+ reg_transform -ref $subj_nii -def2disp $def $def
+ 
+ cpp=$out_dir/ctrlpt_${subj}_to_${atlas_subj}.nii.gz
+ def=$out_dir/def_${subj}_to_${atlas_subj}.nii.gz
+ resampled=$out_dir/${subj}_to_${atlas_subj}.nreg.nii.gz
+
+ reg_f3d -ref $atlas_nii -flo $subj_nii -aff $xfm -cpp $cpp -res $resampled $be #-gpu 
+ reg_transform -ref $atlas_nii -cpp2def $cpp $def
+ reg_transform -ref $atlas_nii -def2disp $def $def
+ 
+
+
+
+done
+
+
+
+

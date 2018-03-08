@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if [ "$#" -lt 1 ]
+then
+ echo "Usage $0 <subjid/list>"
+ exit 0
+fi
+
+output_dir=`pwd`
+
+# generate quickchecks for overlays
+	#general usage for per-subj processing is to specify the two images to compare, and generate an overlay of these
+	#put it in quickchecks folder, named according to processing
+	#could then be a command for creating report html files
+
+qc_dir=QC
+mkdir -p $qc_dir
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$@
+fi
+
+
+output_list=""
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+
+#put pipeline commands here
+t1=$subj_dir/t1/t1.nii.gz
+brain=$subj_dir/t1/t1.brain.nii.gz
+
+
+output_list="$output_list $t1 $brain"
+
+
+done
+
+slicesdir -o $output_list
+
+mv slicesdir $qc_dir/brainmask_`timestamp`
+
+echo "Use this to view:"
+echo "chromium-browser $qc_dir/brainmask_`timestamp`/index.html"

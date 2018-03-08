@@ -1,0 +1,99 @@
+#!/bin/bash
+
+function usage {
+ echo ""
+ echo "Usage: ${0##*/} <img_type> <label_type> <atlas_subj> <subjid/list> <options>"
+ echo "   -o output_dir  Set output directory (default .)"
+ echo "   -S             Use spline interpolation (default nearest neighbour)"
+ echo "   -L             Use linear interpolation (default nearest neighbour)"
+ echo "" 
+ echo " e.g. to propagate t1 maxprob labels from HarvardOxford to test_subj use:"
+ echo "  $0 t1 maxprob HarvardOxford test_subj"
+ 
+}
+
+. functions_checkargs
+
+if [ "$#" -lt 4 ]
+then
+ usage
+ exit 0
+fi
+
+reg_type=bspline_f3d
+
+output_dir=.
+
+img_type=$1 #e.g.: t1, dti, fmri
+label_type=$2 #e.g: wm_bundles
+atlas_subj=$3
+
+shift 3
+
+
+checkRegArgs
+
+atlas_label_dir=$atlas_dir/labels/${img_type}/${label_type}
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+shift 1 
+
+interp_opt="-NN 0"
+
+#flag o with argument "o:"
+while getopts "o:SL" options; do
+ case $options in
+    o ) echo "Using output directory: $OPTARG"
+	output_dir=$OPTARG;;
+    S ) echo "Using spline interpolation"
+	interp_opt="";; #cubic spline by default
+    L ) echo "Using linear interpolation"
+	interp_opt="-LIN";;
+    * ) usage
+	exit 0;;
+ esac
+done
+
+
+
+for subj in $subjids
+do
+
+
+ subj_dir=$output_dir/$subj
+ subj_nii=$subj_dir/$img_path
+ echo "subj_nii=$subj_nii"
+ 
+ reg_dir=$subj_dir/reg/${reg_type}_${img_type}/${atlas_subj}_${subj}
+
+ out_dir=$subj_dir/labels/${img_type}/${label_type}_${reg_type}_${atlas_subj}
+ mkdir -p $out_dir
+
+ cpp=$reg_dir/ctrlpt_${atlas_subj}_to_${subj}.nii.gz
+
+ if [ ! -e $cpp ]
+ then 
+  echo "Error on $atlas_subj to $subj: Need to run reg_bspline_f3d before propLabels_bspline_f3d!"
+  continue 
+ fi
+
+
+ for in_label in `ls $atlas_label_dir/*.nii.gz`
+ do
+  prefix=${in_label##*/}
+  prefix=${prefix%%.nii.gz}
+  out_label=$out_dir/$prefix.nii.gz
+  reg_resample -flo $in_label -res $out_label -cpp $cpp -ref $subj_nii $interp_opt
+ done
+
+done
+
+
+
+

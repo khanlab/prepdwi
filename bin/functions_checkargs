@@ -1,0 +1,80 @@
+#!/bin/bash
+
+function checkImgType {
+
+if [ ! -e $PIPELINE_CFG_DIR/img_types/$1 ]
+then
+  echo "Choose img type from:"
+  pushd $PIPELINE_CFG_DIR/img_types > /dev/null 
+  ls *
+  popd > /dev/null
+
+ return 1
+ else
+ 
+ return 0
+
+fi
+
+}
+
+
+function checkCoregArgs {
+
+checkImgType $img_type_1
+if [ "$?" = "1" ]
+then
+  exit 0
+else
+  img_path_1=`cat $PIPELINE_CFG_DIR/img_types/$img_type_1`
+fi
+
+checkImgType $img_type_2
+if [ "$?" = "1" ]
+then
+  exit 0
+else
+  img_path_2=`cat $PIPELINE_CFG_DIR/img_types/$img_type_2`
+fi
+
+
+}
+
+function checkRegArgs {
+
+checkImgType $img_type
+if [ "$?" = "1" ]
+then
+  exit 0
+else
+  img_path=`cat $PIPELINE_CFG_DIR/img_types/$img_type`
+fi
+
+# look for atlas_subj in current project folder, then in PIPELINE_ATLAS_DIR
+#  if cannot find in either, then exit
+
+#special string "coreg" used to mean the same subj
+
+
+if [  -e $output_dir/$atlas_subj ]
+then
+
+  atlas_dir=$output_dir/$atlas_subj
+
+ else
+
+  #check atlas folder
+  if [ -e $PIPELINE_ATLAS_DIR/$atlas_subj ]
+  then
+    atlas_dir=$PIPELINE_ATLAS_DIR/$atlas_subj
+  else
+    echo "atlas: $atlas_subj does not exist!"
+    exit 0
+  fi
+
+fi
+
+
+}
+
+
