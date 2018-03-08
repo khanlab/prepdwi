@@ -39,7 +39,7 @@ atlas_space=MNI152_1mm
 
 if [ "$#" -lt 3 ]
 then
- echo "Usage: prepdwi bids_dir output_dir {participant,group} <optional arguments>"
+ echo "Usage: prepdwi bids_dir output_dir {participant,group,participant2} <optional arguments>"
  echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
  echo "          [--matching_dwi MATCHING_PATTERN"
  echo "          [--matching_T1w MATCHING_STRING"
@@ -54,7 +54,7 @@ then
  echo "          {--atlas NAME (default: dosenbach)"
  echo ""
  echo " customize atlas labels:"
- echo "          {--atlas_space NAME (default: MNI152_1mm)"
+ echo "          {--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)"
  echo "          [--atlas_label_nii NIFTI" 
  echo "          [--atlas_label_csv LABEL_INDEX_CSV"
  echo ""
@@ -495,7 +495,7 @@ popd
     # color rgb??
     # DWI overlaid with atlas labels??
 
- elif [ "$analysis_level" = "participant3" ]
+ elif [ "$analysis_level" = "participant2" ]
  then
 
  #if a separate script, have it take: atlas_label_nii, atlas_label_csv, subj 
@@ -536,9 +536,6 @@ popd
 
  
    #network connectivity
-   echo "participant3 level"
-
-   #required options:
 
    #import atlas_label_nii file  -> imports to labelgroup "imported"
      #or:  
