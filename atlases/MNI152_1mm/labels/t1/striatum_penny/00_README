@@ -1,0 +1,33 @@
+Striatum parcellation based on ctrls:
+
+Source images are here:
+/pennylab/Ali/pennydti/avgParc_striatum_withRostralMotor/ctrl
+
+3D max prob segmentation:
+striatum_parcellation.nii.gz
+
+1 caudal motor
+2 executive
+3 limbic
+4 occipital
+5 parietal
+6 rostral motor
+7 temporal
+
+
+probabilistic segmentations (4D):
+striatum_parcellation.prob4D.nii.gz
+
+ contains: 
+ 0 seeds_to_Caudal_motor.avg.nii.gz
+ 1 seeds_to_Executive.avg.nii.gz
+ 2 seeds_to_Limbic.avg.nii.gz
+ 3 seeds_to_Occipital.avg.nii.gz
+ 4 seeds_to_Parietal.avg.nii.gz
+ 5 seeds_to_Rostral_motor.avg.nii.gz
+ 6 seeds_to_Temporal.avg.nii.gz
+
+ ## the seed maps are counts (from 0 to 5000 streamlines), so need to normalize to get probababilities.
+ # taking the 98th percentile of each map gives at most ~3000, so normalize by that  (capping at 1)
+ # fslmaths striatum_parcellation.prob4D.nii.gz -div 3000 -sub 1 -uthr 0 -add 1 striatum_parcellation.prob4D.nii.gz
+

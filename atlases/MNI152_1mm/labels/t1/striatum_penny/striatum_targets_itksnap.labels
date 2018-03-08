@@ -1,0 +1,22 @@
+################################################
+# ITK-SnAP Label Description File
+# File format: 
+# IDX   -R-  -G-  -B-  -A--  VIS MSH  LABEL
+# Fields: 
+#    IDX:   Zero-based index 
+#    -R-:   Red color component (0..255)
+#    -G-:   Green color component (0..255)
+#    -B-:   Blue color component (0..255)
+#    -A-:   Label transparency (0.00 .. 1.00)
+#    VIS:   Label visibility (0 or 1)
+#    IDX:   Label mesh visibility (0 or 1)
+#  LABEL:   Label description 
+################################################
+    0     0    0    0        0  0  0    "Clear Label"
+    1     0   48  255        1  1  1    "Caudal Motor"
+    2   255  242    0        1  1  1    "Executive"
+    3   255   40   11        1  1  1    "Limbic"
+    4     0  109   23        1  1  1    "Occipital"
+    5   212   33  255        1  1  1    "Parietal"
+    6     0  255    5        1  1  1    "Rostral Motor"
+    7   182   80   33        1  1  1    "Temporal"

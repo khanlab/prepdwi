@@ -5,6 +5,21 @@ function die {
  exit 1
 }
 
+function fixsubj {
+#add on sub- if not exists
+subj=$1
+ if [ ! "${subj:0:4}" = "sub-" ]
+ then
+  subj="sub-$subj"
+ fi
+ echo $subj
+}
+
+execpath=`dirname $0`
+execpath=`realpath $execpath`
+
+in_atlas_dir=$execpath/atlases
+
 matching_dwi=
 participant_label=
 notopup=0
@@ -14,7 +29,13 @@ matching_T1w=
 n_cpus=8
 reg_init_subj=
 
-atlas_space=MNI152Nlin2009cAsym
+#default:
+atlas=dosenbach
+
+atlas_space=MNI152_1mm
+#atlas_label_nii=dosenbach/dos160_roi_atlas.nii.gz
+#atlas_label_csv=dosenbach/dos160_roi_atlas.csv
+
 
 if [ "$#" -lt 3 ]
 then
@@ -23,12 +44,19 @@ then
  echo "          [--matching_dwi MATCHING_PATTERN"
  echo "          [--matching_T1w MATCHING_STRING"
  echo "          [--reg_init_participant PARTICIPANT_LABEL"
- echo "          [--atlas_label_nii NIFTI" 
- echo "          [--atlas_label_csv LABEL_INDEX_CSV"
+ echo ""
  echo "          [--no-topup]"
  echo "          [--no-bedpost]"
  echo "          [--dke]"
  echo "          [--n_cpus] NCPUS (for bedpost, default: 8) "
+ echo ""
+ echo " choose built-in atlas:"
+ echo "          {--atlas NAME (default: dosenbach)"
+ echo ""
+ echo " customize atlas labels:"
+ echo "          {--atlas_space NAME (default: MNI152_1mm)"
+ echo "          [--atlas_label_nii NIFTI" 
+ echo "          [--atlas_label_csv LABEL_INDEX_CSV"
  echo ""
  exit 1
 fi
@@ -106,6 +134,8 @@ while :; do
           --matching_T1w=)         # handle the case of an empty --acq=
          die 'error: "--matching_dwi" requires a non-empty option argument.'
           ;;
+
+
       --reg_init_participant )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 reg_init_subj=$2
@@ -121,8 +151,69 @@ while :; do
          die 'error: "--reg_init_participant" requires a non-empty option argument.'
           ;;
 
-      
+      --atlas )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                atlas=$2
+                  shift
+	      else
+              die 'error: "--atlas" requires a non-empty option argument.'
+            fi
+              ;;
+     --atlas=?*)
+          atlas=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --atlas=)         # handle the case of an empty --participant=
+         die 'error: "--atlas" requires a non-empty option argument.'
+          ;;
 
+
+      
+      --atlas_label_nii )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                atlas_label_nii=$2
+                  shift
+	      else
+              die 'error: "--atlas_label_nii" requires a non-empty option argument.'
+            fi
+              ;;
+     --atlas_label_nii=?*)
+          atlas_label_nii=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --atlas_label_nii=)         # handle the case of an empty --participant=
+         die 'error: "--atlas_label_nii" requires a non-empty option argument.'
+          ;;
+
+
+      --atlas_label_csv )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                atlas_label_csv=$2
+                  shift
+	      else
+              die 'error: "--atlas_label_csv" requires a non-empty option argument.'
+            fi
+              ;;
+     --atlas_label_csv=?*)
+          atlas_label_csv=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --atlas_label_csv=)         # handle the case of an empty --participant=
+         die 'error: "--atlas_label_csv" requires a non-empty option argument.'
+          ;;
+
+
+      --atlas_space )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                atlas_space=$2
+                  shift
+	      else
+              die 'error: "--atlas_space" requires a non-empty option argument.'
+            fi
+              ;;
+     --atlas_space=?*)
+          atlas_space=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --atlas_space=)         # handle the case of an empty --participant=
+         die 'error: "--atlas_space" requires a non-empty option argument.'
+          ;;
 
 
 
@@ -160,7 +251,7 @@ work_folder=$out_folder/work
 derivatives=$out_folder #bids derivatives
 
 mkdir -p $work_folder $derivatives
-
+derivatives=`realpath $derivatives`
 
 if [ -n "$participant_label" ]
 then
@@ -169,7 +260,13 @@ else
 subjlist=`tail -n +2 $participants | awk '{print $1}'`
 fi
 
-
+if [ -e $execpath/$atlas.cfg ]
+then
+  source $execpath/$atlas.cfg
+  else
+   echo "atlas config file $execpath/$atlas.cfg does not exist!"
+   exit 1
+fi
 
 if [ "$analysis_level" = "participant" ]
 then
@@ -193,132 +290,8 @@ else
   searchstring_t1w=*T1w.nii*
 fi
 
-for subj in $subjlist 
-do
 
-#add on sub- if not exists
-if [ ! "${subj:0:4}" = "sub-" ]
-then
-  subj="sub-$subj"
-fi
-
-
-N_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | wc -l`
-in_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | head -n 1`
-
-echo Found $N_t1w matching T1w, using first found: $in_t1w
-if [ ! -e $subj/t1/t1.nii.gz ]
-then
-echo importT1 $in_t1w $subj
-importT1 $in_t1w $subj
-fi
-
-if [ ! -e $subj/t1/t1.brain.inorm.nii.gz ]
-then
-preprocT1 $subj
-fi
- 
-Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
-
- if [ ! -e $subj/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
- then
-
- echo Ndwi=$Ndwi
-echo Found $Ndwi matching dwi, using all: 
- eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}
-
- echo "importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj"
- importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj
-
- fi
-
- if [ ! -e $subj/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
- then
- echo processDwiDenoise uncorrected $subj
- processDwiDenoise uncorrected $subj
- fi
-
- if [ ! -e $subj/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
- then
- echo processUnring uncorrected_denoise $subj
- processUnring uncorrected_denoise $subj
- fi
-
-
- if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
- then
- 
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
-  then
-   echo processEddyNoTopUp uncorrected_denoise_unring $subj
-   processEddyNoTopUp uncorrected_denoise_unring $subj
-  fi
-  
-   eddy=eddy
- else
-
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
-  then 
-    echo processTopUp uncorrected_denoise_unring $subj
-    processTopUp uncorrected_denoise_unring $subj
-  fi
-
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
-  then
-    echo processEddy uncorrected_denoise_unring_topup $subj
-    processEddy uncorrected_denoise_unring_topup $subj
-  fi
-  eddy=topup_eddy
- fi
-
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
-  then
-  echo processRegT1 uncorrected_denoise_unring_$eddy $subj
-  processRegT1 uncorrected_denoise_unring_$eddy $subj
-  fi
-
-  
-  #continue running pipelines
-  if [ "$bedpost" = 1 ]
-  then 
-    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/bedpost.bedpostX/dyads1.nii.gz ]
-    then
-    echo processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
-    processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
-    fi
-  fi 
-
-  if [ "$dke" = 1 ]
-  then 
-    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1_dke/kmean.nii.gz ]
-    then
-    echo processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
-    processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
-    fi
-  fi 
-
- 
-  processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $derivatives $subj
-
-done
-
-
-popd
-
-
- elif [ "$analysis_level" = "participant2" ]
- then
-
-
-     ## move this to basic participant level analysis later..
-
-   echo "participant2 level"
-   #perform MNI registration with T1w
-
- pushd $work_folder
-
-   echo in_atlas_dir: $in_atlas_dir
-#copy atlases to output folder
+#copy atlases to output folder, and run registration for all of them
 for atlas in `ls -d $in_atlas_dir/*`
 do
  atlas_name=${atlas##*/}
@@ -333,25 +306,154 @@ do
  else
    sleep 30
  fi
+fi
+
+done
+
+
+for subj in $subjlist 
+do
+
+#add on sub- if not exists
+subj=`fixsubj $subj`
+
+N_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | wc -l`
+in_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | head -n 1`
+
+echo Found $N_t1w matching T1w, using first found: $in_t1w
+if [ ! -e $subj/t1/t1.nii.gz ]
+then
+echo $execpath/bin/importT1 $in_t1w $subj
+$execpath/bin/importT1 $in_t1w $subj
+fi
+
+if [ ! -e $subj/t1/t1.brain.inorm.nii.gz ]
+then
+echo $execpath/bin/preprocT1 $subj
+ $execpath/bin/preprocT1 $subj
+fi
+
+
+#register t1 to atlases
+for atlas in `ls -d $in_atlas_dir/*`
+do
+ atlas_name=${atlas##*/}
+
+
+if [ -n "$reg_init_subj" ]
+then
+ echo $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
+ $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
+ echo $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+ $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+
+ else
+
+ if [ ! -e $subj/reg/affine_aladin_t1/${atlas_name}_$subj/${atlas_name}_to_${subj}.xfm ]
+ then
+ echo $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj 
+ $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj 
  fi
 
-   if [ -n "$reg_init_subj" ]
-   then
-    reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
-    else
-   reg_intersubj_aladin  t1 $atlas_name $subj 
-   fi
+ if [ ! -e $subj/reg/bspline_f3d_t1/${atlas_name}_$subj/ctrlpt_${atlas_name}_to_${subj}.nii.gz ]
+ then
+    echo $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+    $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+ fi
 
-   reg_bspline_f3d t1 $atlas_name $subj
 
- for label in `ls -d $atlas_name/labels/t1/*`
- do
-   label_name=${label##*/}
-    
-   propLabels_reg_bspline_f3d t1 $label_name $atlas_name $subj
- done #label
+ fi
 
 done #atlas
+
+
+
+Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
+
+ if [ ! -e $subj/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
+ then
+
+ echo Ndwi=$Ndwi
+echo Found $Ndwi matching dwi, using all: 
+ eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}
+
+ echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj"
+ $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj
+
+ fi
+
+ if [ ! -e $subj/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
+ then
+ echo $execpath/bin/processDwiDenoise uncorrected $subj
+ $execpath/bin/processDwiDenoise uncorrected $subj
+ fi
+
+ if [ ! -e $subj/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
+ then
+ echo $execpath/bin/processUnring uncorrected_denoise $subj
+ $execpath/bin/processUnring uncorrected_denoise $subj
+ fi
+
+
+ if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
+ then
+ 
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
+  then
+   echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj
+   $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj
+  fi
+  
+   eddy=eddy
+ else
+
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
+  then 
+    echo $execpath/bin/processTopUp uncorrected_denoise_unring $subj
+    $execpath/bin/processTopUp uncorrected_denoise_unring $subj
+  fi
+
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
+  then
+    echo $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj
+    $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj
+  fi
+  eddy=topup_eddy
+ fi
+
+  if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
+  then
+  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
+  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
+  fi
+
+  
+  #continue running pipelines
+  if [ "$bedpost" = 1 ]
+  then 
+    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/bedpost.bedpostX/dyads1.nii.gz ]
+    then
+    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
+    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_regT1 $subj
+    fi
+  fi 
+
+  if [ "$dke" = 1 ]
+  then 
+    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1_dke/kmean.nii.gz ]
+    then
+    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
+    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}_regT1 $subj
+    fi
+  fi 
+
+  #internally checks if files already exist before copying
+  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $derivatives $subj
+  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}_regT1 $derivatives $subj
+
+done
+
+
 popd
 
 
@@ -371,14 +473,14 @@ elif [ "$analysis_level" = "group1" ]
         echo $subj >> $qclist
     done
     
-    pushd $work_dir
-    genOverlay_brainmask $qclist
+    pushd $work_folder
+    $execpath/bin/genOverlay_brainmask $qclist
 
     for atlas in `ls -d $in_atlas_dir/*`
     do
      atlas_name=${atlas##*/}
-     genOverlay_affine_atlasReg $atlas_name $qclist
-     genOverlay_bspline_atlasReg $atlas_name $qclist
+     $execpath/bin/genOverlay_affine_atlasReg $atlas_name $qclist
+     $execpath/bin/genOverlay_bspline_atlasReg $atlas_name $qclist
     done
 
 popd
@@ -396,7 +498,43 @@ popd
  elif [ "$analysis_level" = "participant3" ]
  then
 
+ #if a separate script, have it take: atlas_label_nii, atlas_label_csv, subj 
 
+ if [ -e $work_folder/$atlas_space/labels/t1/$atlas_label_nii ]
+ then
+     atlas_label_nii=`realpath $work_folder/$atlas_space/labels/t1/$atlas_label_nii`
+ else
+     if [ ! -e $atlas_label_nii ]
+     then
+      echo "--atlas_label_nii $atlas_label_nii does not exist!"
+      exit 1
+    else
+     atlas_label_nii=`realpath $atlas_label_nii`
+     fi
+ fi
+
+ if [ -e $work_folder/$atlas_space/labels/t1/$atlas_label_csv ]
+ then
+     atlas_label_csv=`realpath $work_folder/$atlas_space/labels/t1/$atlas_label_csv`
+ else
+     if [ ! -e $atlas_label_csv ]
+     then
+      echo "--atlas_label_csv $atlas_label_csv does not exist!"
+      exit 1
+    else
+     atlas_label_csv=`realpath $atlas_label_csv`
+    fi
+
+ fi
+ 
+ pushd $work_folder
+  for subj in $subjlist 
+  do
+
+ #add on sub- if not exists
+ subj=`fixsubj $subj`
+
+ 
    #network connectivity
    echo "participant3 level"
 
@@ -406,19 +544,55 @@ popd
      #or:  
    #existing label-group and nii filename
   
-   mkdir -p $work_folder/$atlas_space/labels/t1/imported
-   cp -v $atlas_label_nii $work_folder/$atlas_space/labels/t1/imported
-   propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+   mkdir -p $atlas_space/labels/t1/imported
+   cp -v $atlas_label_nii $atlas_space/labels/t1/imported
 
+    propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+
+
+   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | head -n 1`
+
+   atlas_label_name=${atlas_label_nii##*/}
+   atlas_label_name=${atlas_label_name%%.nii*}
+
+   
+   out_track_dir=$bedpost_dir/probtrack.$atlas_label_name
+
+   mkdir -p $out_track_dir
+
+   targets_txt=$out_track_dir/targets.txt
+   mkdir -p $out_track_dir/targets
+   rm -f $targets_txt
 
    #atlas_label_csv
-
    #need to loop through csv, extract labels, add to targets.txt file
+   for line in `cat $atlas_label_csv`
+   do
+       label=${line%,*}
+       index=${line##*,}
+      
+       index_pad=`printf  %03d $index`
+       extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
+       echo fslmaths $atlas_label_nii -thr $index -uthr $index $extracted
+       fslmaths $atlas_label_nii -thr $index -uthr $index $extracted
+       realpath $extracted >> $targets_txt
+    done
+
+ samples_base=$bedpost_dir/merged
+ mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
+ probseeds=1000
+ probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $probseeds --fibthresh=0.01 --distthresh=0.0
+ --sampvox=0.0 --forcedir --opd --network"
+
    #run probtractx with network mode 
+   probtrackx2 --seed=$targets_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_track_dir  $probtrack_opts
 
 
    #save to: 
    #   bedpost/sub-XXX/probtrack.$atlas_name.$label_csv_name
+
+   done #subj
+   popd
 
  else    
   echo "unknown analysis level: $analysis_level"

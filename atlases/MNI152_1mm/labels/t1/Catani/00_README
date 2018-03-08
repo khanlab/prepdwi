@@ -1,0 +1,8 @@
+Aug 8, 2016 
+Ali Khan
+
+
+Imported from natbrainlab.com (Catani Lab website)
+Resampled into FSL MNI space after verifying that original bundles are already registered to MNI space
+	from orig/ folder:
+		for im in `ls *.nii.gz`; do reg_resample -flo $im -ref ../../../../t1/t1.nii.gz -res ../$im -LIN; done
