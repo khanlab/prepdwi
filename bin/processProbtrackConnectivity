@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#dependencies: fsl bedpostx
+#precondition: 
+
+if [ "$#" -lt 3 ]
+then
+ echo "Writes output to dwi/<in_dwi_name>/bedpost.bedpostX/probtrack"
+ echo "Usage $0 <atlas_label_nii> <atlas_label_csv> <atlas_space> <subjid/list>"
+ exit 0
+fi
+
+output_dir=`pwd`
+
+atlas_label_nii=$1
+atlas_label_csv=$2
+atlas_space=$3
+shift 3
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+  #import atlas_label_nii file  -> imports to labelgroup "imported"
+     #or:  
+   #existing label-group and nii filename
+ 
+   atlas_label_name=${atlas_label_nii##*/}
+   atlas_label_name=${atlas_label_name%%.nii*}
+
+   mkdir -p $atlas_space/labels/t1/imported
+   cp -v $atlas_label_nii $atlas_space/labels/t1/imported
+
+    echo propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+    propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+
+   atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
+
+   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | tail -n 1`
+ 
+   out_track_dir=$bedpost_dir/probtrack.$atlas_label_name
+
+   mkdir -p $out_track_dir
+
+   targets_txt=$out_track_dir/targets.txt
+   mkdir -p $out_track_dir/targets
+   rm -f $targets_txt
+
+   #atlas_label_csv
+   #need to loop through csv, extract labels, add to targets.txt file
+   for line in `cat $atlas_label_csv`
+   do
+       label=${line%,*}
+       index=${line##*,}
+      
+       index_pad=`printf  %03d $index`
+       extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
+       echo fslmaths $atlas_t1 -thr $index -uthr $index $extracted
+       fslmaths $atlas_t1 -thr $index -uthr $index $extracted
+       realpath $extracted >> $targets_txt
+    done
+
+ samples_base=$bedpost_dir/merged
+ mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
+ probseeds=5000
+ probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $probseeds --fibthresh=0.01 --distthresh=0.0
+ --sampvox=0.0 --forcedir --opd --network"
+
+   #run probtractx with network mode 
+   probtrackx2 --seed=$targets_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_track_dir  $probtrack_opts
+
+
+
+
+done
+
+

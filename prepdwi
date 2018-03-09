@@ -498,7 +498,7 @@ popd
  elif [ "$analysis_level" = "participant2" ]
  then
 
- #if a separate script, have it take: atlas_label_nii, atlas_label_csv, subj 
+ #network connectivity matrix
 
  if [ -e $work_folder/$atlas_space/labels/t1/$atlas_label_nii ]
  then
@@ -530,68 +530,14 @@ popd
  pushd $work_folder
   for subj in $subjlist 
   do
+      #add on sub- if not exists
+      subj=`fixsubj $subj`
 
- #add on sub- if not exists
- subj=`fixsubj $subj`
-
- 
-   #network connectivity
-
-   #import atlas_label_nii file  -> imports to labelgroup "imported"
-     #or:  
-   #existing label-group and nii filename
-  
-   mkdir -p $atlas_space/labels/t1/imported
-   cp -v $atlas_label_nii $atlas_space/labels/t1/imported
-
-    echo propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
-    propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
-
-    
-   atlas_label_name=${atlas_label_nii##*/}
-   atlas_label_name=${atlas_label_name%%.nii*}
-
-   atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
-
-   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | head -n 1`
-
-   
-   out_track_dir=$bedpost_dir/probtrack.$atlas_label_name
-
-   mkdir -p $out_track_dir
-
-   targets_txt=$out_track_dir/targets.txt
-   mkdir -p $out_track_dir/targets
-   rm -f $targets_txt
-
-   #atlas_label_csv
-   #need to loop through csv, extract labels, add to targets.txt file
-   for line in `cat $atlas_label_csv`
-   do
-       label=${line%,*}
-       index=${line##*,}
-      
-       index_pad=`printf  %03d $index`
-       extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
-       echo fslmaths $atlas_t1 -thr $index -uthr $index $extracted
-       fslmaths $atlas_t1 -thr $index -uthr $index $extracted
-       realpath $extracted >> $targets_txt
-    done
-
- samples_base=$bedpost_dir/merged
- mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
- probseeds=5000
- probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $probseeds --fibthresh=0.01 --distthresh=0.0
- --sampvox=0.0 --forcedir --opd --network"
-
-   #run probtractx with network mode 
-   probtrackx2 --seed=$targets_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_track_dir  $probtrack_opts
+     echo $execpath/bin/processProbtrackConnectivity $atlas_label_nii $atlas_label_csv $atlas_space $subj
+     $execpath/bin/processProbtrackConnectivity $atlas_label_nii $atlas_label_csv $atlas_space $subj
+  done
 
 
-   #save to: 
-   #   bedpost/sub-XXX/probtrack.$atlas_name.$label_csv_name
-
-   done #subj
    popd
 
  else    
