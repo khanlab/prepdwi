@@ -544,13 +544,16 @@ popd
    mkdir -p $atlas_space/labels/t1/imported
    cp -v $atlas_label_nii $atlas_space/labels/t1/imported
 
+    echo propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
     propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
 
-
-   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | head -n 1`
-
+    
    atlas_label_name=${atlas_label_nii##*/}
    atlas_label_name=${atlas_label_name%%.nii*}
+
+   atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
+
+   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | head -n 1`
 
    
    out_track_dir=$bedpost_dir/probtrack.$atlas_label_name
@@ -570,14 +573,14 @@ popd
       
        index_pad=`printf  %03d $index`
        extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
-       echo fslmaths $atlas_label_nii -thr $index -uthr $index $extracted
-       fslmaths $atlas_label_nii -thr $index -uthr $index $extracted
+       echo fslmaths $atlas_t1 -thr $index -uthr $index $extracted
+       fslmaths $atlas_t1 -thr $index -uthr $index $extracted
        realpath $extracted >> $targets_txt
     done
 
  samples_base=$bedpost_dir/merged
  mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
- probseeds=1000
+ probseeds=5000
  probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $probseeds --fibthresh=0.01 --distthresh=0.0
  --sampvox=0.0 --forcedir --opd --network"
 
