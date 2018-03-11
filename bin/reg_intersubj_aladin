@@ -2,7 +2,7 @@
 
 function usage {
  echo ""
- echo "Usage: ${0##*/}  <img_type> <atlas_subj> <subjid/list> <options>"
+ echo "Usage: ${0##*/}  <img_type> <img_rel_path> <atlas_subj> <subjid/list> <options>"
  echo "   -o output_dir	 Set output directory (default .)"
  echo "   -r             Use rigid (6-dof) registration (default affine 12-dof)"
  echo "   -i <subjid>	 Use xfm from <subjid> to initialize (default - no initialization)"
@@ -13,9 +13,8 @@ function usage {
  echo ""
 }
 
-. functions_checkargs
 
-if [ "$#" -lt 3 ]
+if [ "$#" -lt 4 ]
 then
  usage
  exit 0
@@ -26,12 +25,12 @@ reg_type=affine_aladin
 output_dir=.
 
 img_type=$1 #e.g.: t1, dti, fmri
-atlas_subj=$2
+img_path=$2
+atlas_subj=$3
 
-shift 2
+shift 3
 
 
-checkRegArgs
 
  atlas_nii=$atlas_dir/$img_path
  echo atlas_nii=$atlas_nii

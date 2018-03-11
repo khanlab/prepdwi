@@ -1,11 +1,10 @@
 #!/bin/bash
 
-. functions_checkargs
 
-if [ "$#" -lt 3 ]
+if [ "$#" -lt 4 ]
 then
  echo ""
- echo "Usage: ${0##*/} <img_type> <atlas_subj> <subjid/list> <options>"
+ echo "Usage: ${0##*/} <img_type> <img_rel_path> <atlas_subj> <subjid/list> <options>"
  echo "		-b bending energy value		Set bending energy penalty term (default 0.005)"
  echo ""
  echo " e.g. to register t1 catani atlas to test_subj use:"
@@ -19,12 +18,12 @@ reg_type=bspline_f3d
 output_dir=.
 
 img_type=$1 #e.g.: t1, dti, fmri
-atlas_subj=$2
+img_path=$2
+atlas_subj=$3
 
-shift 2
+shift 3
 
 
-checkRegArgs
 
 
 #could put this in a config file as some point:

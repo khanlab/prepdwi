@@ -6,8 +6,6 @@ then
  exit 0
 fi
 
-output_dir=`pwd`
-output_dir=.
 
 # generate quickchecks for overlays
 	#general usage for per-subj processing is to specify the two images to compare, and generate an overlay of these
@@ -36,13 +34,13 @@ do
 
 
 
-subj_dir=$output_dir/$subj
+subj_dir=$subj
 
 
 #put pipeline commands here
-if [ -e $output_dir/$atlas_name/t1/t1.brain.nii.gz ]
+if [ -e $atlas_name/t1/t1.brain.nii.gz ]
 then
- t1=$output_dir/$atlas_name/t1/t1.brain.nii.gz
+ t1=$atlas_name/t1/t1.brain.nii.gz
 else
  t1=$PIPELINE_ATLAS_DIR/$atlas_name/t1/t1.brain.nii.gz
 fi
@@ -61,9 +59,9 @@ done
 echo slicesdir -o $output_list
 slicesdir -o $output_list
 
-out_dir=$qc_dir/atlas_affine_reg_${atlas_name}_`timestamp`
+out_dir=$qc_dir/atlas_affine_reg_${atlas_name}
 mv slicesdir $out_dir
 
-echo "Use this to view:"
-echo "chromium-browser $out_dir/index.html"
+#echo "Use this to view:"
+#echo "chromium-browser $out_dir/index.html"
 

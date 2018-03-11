@@ -1,0 +1,5 @@
+#!/bin/bash
+
+atlas_space=MNI152_1mm
+atlas_label_nii=Yeo/Yeo2011_7Networks_N1000.MNI152_1mm.median.nii.gz
+atlas_label_csv=Yeo/Yeo2011_7Networks.csv

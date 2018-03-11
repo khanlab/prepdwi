@@ -2,7 +2,7 @@
 
 function usage {
  echo ""
- echo "Usage: ${0##*/} <img_type> <label_type> <atlas_subj> <subjid/list> <options>"
+ echo "Usage: ${0##*/} <img_type> <img_rel_path> <label_type> <atlas_subj> <subjid/list> <options>"
  echo "   -o output_dir  Set output directory (default .)"
  echo "   -S             Use spline interpolation (default nearest neighbour)"
  echo "   -L             Use linear interpolation (default nearest neighbour)"
@@ -12,9 +12,8 @@ function usage {
  
 }
 
-. functions_checkargs
 
-if [ "$#" -lt 4 ]
+if [ "$#" -lt 5 ]
 then
  usage
  exit 0
@@ -25,13 +24,13 @@ reg_type=bspline_f3d
 output_dir=.
 
 img_type=$1 #e.g.: t1, dti, fmri
-label_type=$2 #e.g: wm_bundles
-atlas_subj=$3
+img_rel_path=$2
+label_type=$3 #e.g: wm_bundles
+atlas_subj=$4
 
-shift 3
+shift 4
 
 
-checkRegArgs
 
 atlas_label_dir=$atlas_dir/labels/${img_type}/${label_type}
 

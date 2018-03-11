@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+atlas_space=MNI152NLin2009cAsym
+atlas_label_nii=striatum_vta_snc_avg_control_parc/combined_parc.nii.gz
+atlas_label_csv=striatum_vta_snc_avg_control_parc/combined_parc_labels.csv

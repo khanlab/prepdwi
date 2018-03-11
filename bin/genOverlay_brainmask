@@ -6,7 +6,6 @@ then
  exit 0
 fi
 
-output_dir=`pwd`
 
 # generate quickchecks for overlays
 	#general usage for per-subj processing is to specify the two images to compare, and generate an overlay of these
@@ -30,7 +29,7 @@ do
 
 
 
-subj_dir=$output_dir/$subj
+subj_dir=$subj
 
 
 #put pipeline commands here
@@ -45,7 +44,7 @@ done
 
 slicesdir -o $output_list
 
-mv slicesdir $qc_dir/brainmask_`timestamp`
+mv slicesdir $qc_dir/brainmask
 
-echo "Use this to view:"
-echo "chromium-browser $qc_dir/brainmask_`timestamp`/index.html"
+#echo "Use this to view:"
+#echo "chromium-browser $qc_dir/brainmask_`timestamp`/index.html"

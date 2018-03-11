@@ -50,14 +50,21 @@ then
  echo "          [--dke]"
  echo "          [--n_cpus] NCPUS (for bedpost, default: 8) "
  echo ""
- echo " choose built-in atlas:"
+ echo " Choose built-in atlas:"
  echo "          {--atlas NAME (default: dosenbach)"
  echo ""
- echo " customize atlas labels:"
+ echo " Available built-in atlas labels/csv:"
+ pushd $execpath/cfg > /dev/null
+echo -n "   "; 
+ls *
+popd > /dev/null
+ echo ""
+ echo " Customize atlas labels:"
  echo "          {--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)"
  echo "          [--atlas_label_nii NIFTI" 
  echo "          [--atlas_label_csv LABEL_INDEX_CSV"
  echo ""
+
  exit 1
 fi
 
@@ -260,11 +267,11 @@ else
 subjlist=`tail -n +2 $participants | awk '{print $1}'`
 fi
 
-if [ -e $execpath/$atlas.cfg ]
+if [ -e $execpath/cfg/$atlas ]
 then
-  source $execpath/$atlas.cfg
+  source $execpath/cfg/$atlas
   else
-   echo "atlas config file $execpath/$atlas.cfg does not exist!"
+   echo "atlas config file $execpath/cfg/$atlas does not exist!"
    exit 1
 fi
 
@@ -292,21 +299,20 @@ fi
 
 
 #copy atlases to output folder, and run registration for all of them
-for atlas in `ls -d $in_atlas_dir/*`
+for atlas_dir in `ls -d $in_atlas_dir/*`
 do
- atlas_name=${atlas##*/}
+ atlas_name=${atlas_dir##*/}
 
- #if atlas not copied, then:
- if [ ! -e $atlas_name ]
- then
+ iscopying=$atlas_dir/iscopying_${atlas_name}
  #mkdir to ensure only one process copies the files..
- if $(mkdir $atlas_name)
+ if $(mkdir -p $iscopying )
  then
-   cp -Rv $atlas/* $atlas_name
+   mkdir -p $atlas_dir/$atlas_name
+   cp -Rv $atlas_dir/* $atlas_name
+   rmdir $iscopying
  else
-   sleep 30
+   sleep 30 #wait for 1st job to finish copying
  fi
-fi
 
 done
 
@@ -335,9 +341,9 @@ fi
 
 
 #register t1 to atlases
-for atlas in `ls -d $in_atlas_dir/*`
+for atlas_dir in `ls -d $in_atlas_dir/*`
 do
- atlas_name=${atlas##*/}
+ atlas_name=${atlas_dir##*/}
 
 
 if [ -n "$reg_init_subj" ]
@@ -364,7 +370,7 @@ then
 
  fi
 
-done #atlas
+done #atlas_dir
 
 
 
@@ -457,40 +463,55 @@ done
 popd
 
 
-elif [ "$analysis_level" = "group1" ]
+elif [ "$analysis_level" = "group" ]
  then
 
-    echo "generate preproc QC reports"
+    echo "generating preproc QC reports"
 
     #need to make a subjlist for this command 
-    mkdir -p $work_folder/etc
-    qclist=$work_folder/etc/subjects
-    rm -f $qclist
-    touch $qclist
     for subj in $subjlist
     do
         subj=`fixsubj $subj`
-        echo $subj >> $qclist
-    done
-    
+ 
+        
     pushd $work_folder
-    $execpath/bin/genOverlay_brainmask $qclist
+    $execpath/bin/genOverlay_brainmask $subj > /dev/null
+    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_eddy/dwi.nii.gz dwi/uncorrected_*_eddy/brainmask.nii.gz dwi_brainmask $subj > /dev/null
 
-    for atlas in `ls -d $in_atlas_dir/*`
+    for atlas_dir in `ls -d $in_atlas_dir/*`
     do
-     atlas_name=${atlas##*/}
-     $execpath/bin/genOverlay_affine_atlasReg $atlas_name $qclist
-     $execpath/bin/genOverlay_bspline_atlasReg $atlas_name $qclist
+     atlas_name=${atlas_dir##*/}
+     $execpath/bin/genOverlay_affine_atlasReg $atlas_name $subj > /dev/null
+     $execpath/bin/genOverlay_bspline_atlasReg $atlas_name $subj > /dev/null
     done
 
-popd
+    #dwi and T1 reg
+    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_regT1/dwi.nii.gz dwi/uncorrected_*_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj > /dev/null
 
-    # we need QC for:
+    popd
+   
+    #combine into single html
+    # copy over png files, and grep href, and make first/last line
+    mkdir -p $derivatives/reports/images
+    final_qc=$derivatives/reports/$subj.html
+    echo "<HTML><TITLE>$subj</TITLE><BODY BGCOLOR=\"#aaaaff\">" > $final_qc
+    grep -h href $work_folder/QC/*/index.html >> $final_qc
+    echo "</BODY></HTML>" >>$final_qc
 
-    # brainmask
-    # T1 / MNI affine reg
-    # T1 / MNI nlin reg
-    # T1 / DWI rigid reg
+    #move relative to images subfolder
+    sed -i 's/href="/href="images\//' $final_qc
+    sed -i 's/src="/src="images\//' $final_qc
+
+    #move files and clean-up
+    rm $work_folder/QC/*/grot*.png
+    mv $work_folder/QC/*/*.png $derivatives/reports/images
+    rm $work_folder/QC/*/*
+    rmdir  $work_folder/QC/*
+    rmdir $work_folder/QC
+    done 
+
+    # we still need QC for:
+    # processing performed
     # eddy stats
     # color rgb??
     # DWI overlaid with atlas labels??
