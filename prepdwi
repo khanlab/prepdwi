@@ -303,7 +303,7 @@ for atlas_dir in `ls -d $in_atlas_dir/*`
 do
  atlas_name=${atlas_dir##*/}
 
- iscopying=$atlas_dir/iscopying_${atlas_name}
+ iscopying=iscopying_${atlas_name}
  #mkdir to ensure only one process copies the files..
  if $(mkdir -p $iscopying )
  then
