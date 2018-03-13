@@ -36,6 +36,7 @@ atlas_space=MNI152_1mm
 #atlas_label_nii=dosenbach/dos160_roi_atlas.nii.gz
 #atlas_label_csv=dosenbach/dos160_roi_atlas.csv
 
+nprobseeds=5000
 
 if [ "$#" -lt 3 ]
 then
@@ -50,16 +51,18 @@ then
  echo "          [--dke]"
  echo "          [--n_cpus] NCPUS (for bedpost, default: 8) "
  echo ""
- echo " Choose built-in atlas:"
+ echo " participant2 (probtrack connectivity) options:"
+ echo "          [--nprobseeds] N (for probtrackx, default: 5000) "
+ echo "      Choose built-in atlas:"
  echo "          {--atlas NAME (default: dosenbach)"
  echo ""
- echo " Available built-in atlas labels/csv:"
+ echo "       Available built-in atlas labels/csv:"
  pushd $execpath/cfg > /dev/null
-echo -n "   "; 
+echo -n "          "; 
 ls *
 popd > /dev/null
- echo ""
- echo " Customize atlas labels:"
+ echo "   "
+ echo "       Customize atlas labels:"
  echo "          {--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)"
  echo "          [--atlas_label_nii NIFTI" 
  echo "          [--atlas_label_csv LABEL_INDEX_CSV"
@@ -222,6 +225,14 @@ while :; do
          die 'error: "--atlas_space" requires a non-empty option argument.'
           ;;
 
+     --nprobseeds )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                nprobseeds=$2
+                  shift
+	      else
+              die 'error: "--nprobseeds" requires a non-empty option argument.'
+            fi
+              ;;
 
 
       -?*)
@@ -554,8 +565,9 @@ elif [ "$analysis_level" = "group" ]
       #add on sub- if not exists
       subj=`fixsubj $subj`
 
-     echo $execpath/bin/processProbtrackConnectivity $atlas_label_nii $atlas_label_csv $atlas_space $subj
-     $execpath/bin/processProbtrackConnectivity $atlas_label_nii $atlas_label_csv $atlas_space $subj
+     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $subj
+     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $subj
+
   done
 
 

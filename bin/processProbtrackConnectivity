@@ -3,19 +3,27 @@
 #dependencies: fsl bedpostx
 #precondition: 
 
-if [ "$#" -lt 3 ]
-then
+function usage {
  echo "Writes output to dwi/<in_dwi_name>/bedpost.bedpostX/probtrack"
- echo "Usage $0 <atlas_label_nii> <atlas_label_csv> <atlas_space> <subjid/list>"
- exit 0
+ echo "Usage $0 <in_bedpost_dir> <out_track_dir> <nprobseeds> <atlas_label_nii> <atlas_label_csv> <atlas_space> <subjid/list>"
+
+}
+
+
+if [ "$#" -lt 6 ]
+then
+    usage
+    exit 1
 fi
 
 output_dir=`pwd`
-
-atlas_label_nii=$1
-atlas_label_csv=$2
-atlas_space=$3
-shift 3
+in_bedpost_root=$1
+out_name=$2
+nprobseeds=$3
+atlas_label_nii=$4
+atlas_label_csv=$5
+atlas_space=$6
+shift 6
 
 if [ -f $1 ]
 then
@@ -27,6 +35,9 @@ fi
 
 for subj in $subjids
 do
+
+    bedpost_dir=$in_bedpost_root/$subj
+   out_track_dir=$in_bedpost_root/$subj/$out_name
 
   #import atlas_label_nii file  -> imports to labelgroup "imported"
      #or:  
@@ -43,9 +54,6 @@ do
 
    atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
 
-   bedpost_dir=`ls -d $subj/dwi/uncorrected_denoise_unring_*regT1/bedpost.bedpostX | tail -n 1`
- 
-   out_track_dir=$bedpost_dir/probtrack.$atlas_label_name
 
    mkdir -p $out_track_dir
 
@@ -69,11 +77,11 @@ do
 
  samples_base=$bedpost_dir/merged
  mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
- probseeds=5000
- probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $probseeds --fibthresh=0.01 --distthresh=0.0
+ probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0
  --sampvox=0.0 --forcedir --opd --network"
 
    #run probtractx with network mode 
+   echo "probtrackx2 --seed=$targets_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_track_dir  $probtrack_opts"
    probtrackx2 --seed=$targets_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_track_dir  $probtrack_opts
 
 
