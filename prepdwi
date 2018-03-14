@@ -328,6 +328,9 @@ do
 done
 
 
+
+t1_img_type=t1/t1.brain.inorm.nii.gz
+
 for subj in $subjlist 
 do
 
@@ -344,7 +347,7 @@ echo $execpath/bin/importT1 $in_t1w $subj
 $execpath/bin/importT1 $in_t1w $subj
 fi
 
-if [ ! -e $subj/t1/t1.brain.inorm.nii.gz ]
+if [ ! -e $subj/${t1_img_type} ]
 then
 echo $execpath/bin/preprocT1 $subj
  $execpath/bin/preprocT1 $subj
@@ -359,23 +362,23 @@ do
 
 if [ -n "$reg_init_subj" ]
 then
- echo $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
- $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj -i $reg_init_subj
- echo $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
- $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+ echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
+ $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
+ echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
+ $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
 
  else
 
  if [ ! -e $subj/reg/affine_aladin_t1/${atlas_name}_$subj/${atlas_name}_to_${subj}.xfm ]
  then
- echo $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj 
- $execpath/bin/reg_intersubj_aladin  t1 $atlas_name $subj 
+ echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
+ $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
  fi
 
  if [ ! -e $subj/reg/bspline_f3d_t1/${atlas_name}_$subj/ctrlpt_${atlas_name}_to_${subj}.nii.gz ]
  then
-    echo $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
-    $execpath/bin/reg_bspline_f3d t1 $atlas_name $subj
+    echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
+    $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
  fi
 
 

@@ -32,6 +32,7 @@ else
  subjids=$1
 fi
 
+t1_img_type=t1/t1.brain.inorm.nii.gz
 
 for subj in $subjids
 do
@@ -49,8 +50,8 @@ do
    mkdir -p $atlas_space/labels/t1/imported
    cp -v $atlas_label_nii $atlas_space/labels/t1/imported
 
-    echo propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
-    propLabels_reg_bspline_f3d t1 imported $atlas_space $subj
+    echo propLabels_reg_bspline_f3d t1 $t1_img_type imported $atlas_space $subj
+    propLabels_reg_bspline_f3d t1 $t1_img_type imported $atlas_space $subj
 
    atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
 
