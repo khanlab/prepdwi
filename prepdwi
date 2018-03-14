@@ -318,7 +318,7 @@ do
  #mkdir to ensure only one process copies the files..
  if $(mkdir -p $iscopying )
  then
-   mkdir -p $atlas_dir/$atlas_name
+   mkdir -p $atlas_name
    cp -Rv $atlas_dir/* $atlas_name
    rmdir $iscopying
  else
@@ -386,6 +386,11 @@ then
 
 done #atlas_dir
 
+#only proceed with pre-processing if preproc dwi does not exist
+preproc_dwi=`ls $subj/dwi/uncorrected_*regT1/dwi.nii.gz | tail -n 1`
+if [ ! -e $preproc_dwi ]
+then
+
 
 
 Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
@@ -446,6 +451,8 @@ echo Found $Ndwi matching dwi, using all:
   echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
   $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
   fi
+
+fi #if not exist preproc dwi
 
   
   #continue running pipelines
