@@ -30,7 +30,7 @@ atlas_subj=$4
 
 shift 4
 
-
+atlas_dir=$output_dir/$atlas_subj
 
 atlas_label_dir=$atlas_dir/labels/${img_type}/${label_type}
 

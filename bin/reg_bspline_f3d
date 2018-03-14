@@ -24,7 +24,7 @@ atlas_subj=$3
 shift 3
 
 
-
+atlas_dir=$output_dir/$atlas_subj
 
 #could put this in a config file as some point:
 atlas_nii=$atlas_dir/$img_path
