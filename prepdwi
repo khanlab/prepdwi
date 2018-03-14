@@ -452,7 +452,18 @@ echo Found $Ndwi matching dwi, using all:
   $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
   fi
 
-fi #if not exist preproc dwi
+  else
+ #if exists already, just need to set eddy to the proper value
+ if [ -e $subj/dwi/uncorrected_denoise_unring_eddy_regT1/dwi.nii.gz ]
+ then
+	 eddy=eddy
+ else
+	 eddy=topup_eddy
+ fi
+	
+
+  
+  fi #if not exist preproc dwi
 
   
   #continue running pipelines
