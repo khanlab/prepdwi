@@ -24,7 +24,7 @@ reg_type=bspline_f3d
 output_dir=.
 
 img_type=$1 #e.g.: t1, dti, fmri
-img_rel_path=$2
+img_path=$2
 label_type=$3 #e.g: wm_bundles
 atlas_subj=$4
 
