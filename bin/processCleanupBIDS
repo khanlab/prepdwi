@@ -85,7 +85,7 @@ if [ -e $in_bedpost -a ! -e $out_bedpost_dir ]
 then
  mkdir -p $out_bedpost_dir
 echo about to copy bedpost to clean bids
-#cp -Rv $in_bedpost/* $out_bedpost_dir
+cp -Rv $in_bedpost/* $out_bedpost_dir
 fi
 
 in_dke=${dwi_dir}_dke
