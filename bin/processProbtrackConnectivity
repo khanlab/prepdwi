@@ -8,7 +8,7 @@ execpath=`realpath $execpath`
 
 function usage {
  echo "Writes output to dwi/<in_dwi_name>/bedpost.bedpostX/probtrack"
- echo "Usage $0 <in_bedpost_dir> <out_track_dir> <nprobseeds> <atlas_label_nii> <atlas_label_csv> <atlas_space> <ncpus> <subjid/list>"
+ echo "Usage $0 <in_bedpost_dir> <out_track_dir> <nprobseeds> <atlas_label_nii> <atlas_label_csv> <atlas_space> <ncpus> <out_connectivity_csv> <subjid/list>"
 
 }
 
@@ -27,7 +27,8 @@ atlas_label_nii=$4
 atlas_label_csv=$5
 atlas_space=$6
 ncpus=$7
-shift 7
+out_conn_csv=$8
+shift 8
 
 if [ -f $1 ]
 then
@@ -61,8 +62,13 @@ do
    atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
 
 
-
    mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
+
+   
+   targets_all_txt=$out_track_dir/targets.txt
+   mkdir -p $out_track_dir/targets
+   rm -f $targets_all_txt
+
 
    for line in `cat $atlas_label_csv`
    do
@@ -73,7 +79,10 @@ do
        extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
        echo fslmaths $atlas_t1 -thr $index -uthr $index $extracted
        fslmaths $atlas_t1 -thr $index -uthr $index $extracted
-       #resample to dwi space
+
+       realpath $extracted >> $targets_all_txt
+
+       #resample to dwi space  -- not needed??
        echo reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
        reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
     done
@@ -82,58 +91,60 @@ do
    run_file=$out_track_dir/probtrack.cmd
    rm -f $run_file
 
-   targets_txt=$out_track_dir/targets.txt
-   mkdir -p $out_track_dir/targets
-   rm -f $targets_txt
-
+   labellist=""
    for line in `cat $atlas_label_csv`
    do
        label=${line%,*}
        index=${line##*,}
       
+       if [ "$labellist" = "" ]
+       then
+        labellist=$label
+       else 
+         labellist="$labellist,$label"
+       fi
+
        index_pad=`printf  %03d $index`
        extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
 
        out_seed_track=$out_track_dir/$index_pad.$label
-      mkdir -p $out_seed_track
+       mkdir -p $out_seed_track
 
        seed_txt=$out_seed_track/seeds.txt
-       targets_txt=$out_seed_track/targets.txt
 
        realpath $extracted > $seed_txt
-       rm -f $targets_txt
 
-       #track from this seed to all other targets
-       for tline in `cat $atlas_label_csv`
-       do
-            if [ ! "$line" = "$tline" ]
-            then
-                
-                tlabel=${tline%,*}
-                tindex=${tline##*,}
-      
-               tindex_pad=`printf  %03d $tindex`
-               extracted=$out_track_dir/targets/$tindex_pad.$tlabel.nii.gz
-
-                #add to list
-                echo adding $extracted to $targets_txt
-                    realpath $extracted >> $targets_txt
-                
-            fi
-
-       done #target 
-
-    echo "about to run probtrackx"
-       samples_base=$bedpost_dir/merged
-    probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd"
    
-#   echo probtrackx2 --seed=$seed_txt --stop=$targets_txt -m $mask_file -s $samples_base --dir=$out_seed_track  $probtrack_opts --omatrix1 
-   echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_txt -m $mask_file -s $samples_base --dir=$out_seed_track  $probtrack_opts --os2t --s2tastext  >>  $run_file
-   probtrackx2 --seed=$seed_txt --targetmasks=$targets_txt -m $mask_file -s $samples_base --dir=$out_seed_track  $probtrack_opts 
+     samples_base=$bedpost_dir/merged
+     probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd"
+   
+     echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_all_txt -m $mask_file -s $samples_base --dir=$out_seed_track  $probtrack_opts --os2t --s2tastext  >>  $run_file
  
 
    done  #seed
 
-   parallel -j $ncpus echo {} :::: $run_file
+    parallel --progress -j $ncpus < $run_file
+
+
+    #now, need to 1) average over rows for matrix_seeds_to_all_targets in each seed dir, then concatenate all together
+
+    echo $labellist > $out_conn_csv
+
+    out_matrix=$
+    for line in `cat $atlas_label_csv`
+    do
+       label=${line%,*}
+       index=${line##*,}
+      
+       index_pad=`printf  %03d $index`
+
+       out_seed_track=$out_track_dir/$index_pad.$label
+
+       #reduce all seeds to a single row by averaging
+      octave --eval "dlmwrite('$out_seed_track/avg_seeds_to_all_targets.csv',mean(importdata('$out_seed_track/matrix_seeds_to_all_targets')./$nprobseeds,1))"
+      
+      cat $out_seed_track/avg_seeds_to_all_targets.csv >> $out_conn_csv
+   done
+
 
 done

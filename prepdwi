@@ -587,7 +587,7 @@ elif [ "$analysis_level" = "group" ]
       subj=`fixsubj $subj`
 
      echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $subj
-     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $subj
+     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj/dwi/${subj}_dwi_atlas-${atlas}_connectivity.csv $subj
 
   done
 
