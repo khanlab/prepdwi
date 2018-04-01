@@ -43,7 +43,12 @@ for subj in $subjids
 do
 
     bedpost_dir=$in_bedpost_root/$subj
+    if [ -n "$SCRATCH_DIR" ] #if running on compute cluster, use scratch dir
+    then
+       out_track_dir=$SCRATCH_DIR/$subj/$out_name
+   else
    out_track_dir=$in_bedpost_root/$subj/$out_name
+   fi
    mkdir -p $out_track_dir
 
   #import atlas_label_nii file  -> imports to labelgroup "imported"
@@ -147,4 +152,11 @@ do
    done
 
 
+    if [ -n "$SCRATCH_DIR" ] #if running on compute cluster, use scratch dir
+    then
+        pushd $SCRATCH_DIR/$subj
+        echo "backing up scratch folder to $in_bedpost_root/$subj/$out_name.tar"
+        tar -cvf $in_bedpost_root/$subj/$out_name.tar $out_name
+        popd
+    fi
 done
