@@ -86,17 +86,11 @@ echo flirt -in $t1 -ref $t1 -applyisoxfm $diff_res -out $t1_ref
 flirt -in $t1 -ref $t1 -applyisoxfm $diff_res -out $t1_ref
 
 
-if [ "$grad_correct" = 1 ]
-then
- echo not implemented yet
-
-else
  #resample dwi to t1 space 
  echo flirt -in $dwi_vol -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
  flirt -in $dwi_vol -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
  echo flirt -in $brain_mask -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
  flirt -in $brain_mask -ref $t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
-fi
 
 dwi_bvec=$out_dir/dwi.bvec
 dwi_bval=$out_dir/dwi.bval

@@ -43,6 +43,7 @@ dwi_bvec=$dwi_dir/dwi.bvec
 dwi_bval=$dwi_dir/dwi.bval
 dwi_vol=$dwi_dir/dwi.nii.gz
 brain_mask=$dwi_dir/brainmask.nii.gz
+in_grad_dev=$dwi_dir/grad_dev.nii.gz
 
 
 
@@ -51,16 +52,24 @@ bvals=$bedpost_data/bvals
 bvecs=$bedpost_data/bvecs
 data=$bedpost_data/data.nii.gz
 nodif_brain_mask=$bedpost_data/nodif_brain_mask.nii.gz
+grad_dev=$bedpost_data/grad_dev.nii.gz
 
 cp -v $dwi_bvec $bvecs
 cp -v $dwi_bval $bvals
 cp -v $dwi_vol $data
 cp -v $brain_mask $nodif_brain_mask
 
+gradopt=""
+if [ -e $in_grad_dev ]
+then
+    cp -v $in_grad_dev $grad_dev 
+    gradopt="-g"
+fi
+
 #binarize brain mask (had intermittent problems with probtrackx2 otherwise)
 fslmaths $nodif_brain_mask -bin $nodif_brain_mask
 
-bedpostx-parallel  $bedpost_data/ -c -P $n_cpus
+bedpostx-parallel  $bedpost_data/ -c -P $n_cpus $gradopt
 
 
 

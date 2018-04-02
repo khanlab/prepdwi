@@ -1,0 +1,157 @@
+#!/bin/bash
+
+# precondition:  processRegT1
+
+if [ "$#" -lt 1 ]
+then
+ echo " writes output to dwi/<input>_gradCorr"
+ echo ""
+ echo "Command-line Usage: $0 <in_dwi_name> <grad_coeff> <subjid>"
+ exit 0
+fi
+
+output_dir=.
+
+in_dwi=$1
+in_regT1=${in_dwi}_regT1
+out_name=${in_regT1}_gradCorr
+
+grad_coeff=$2
+shift 2
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+dwi_dir=$subj_dir/dwi/${in_dwi}
+regT1_dir=$subj_dir/dwi/${in_regT1}
+
+out_dir=$subj_dir/dwi/${out_name}
+t1_dir=$subj_dir/t1
+
+mkdir -p $out_dir
+
+dwi_bvec=$dwi_dir/dwi.bvec
+dwi_bval=$dwi_dir/dwi.bval
+dwi_vol=$dwi_dir/dwi.nii.gz
+brain_mask=$dwi_dir/brainmask.nii.gz
+
+b0=$dwi_dir/dti_S0.nii.gz
+
+epireg_work=$regT1_dir/epi_reg
+xfm_b0_t1=$epireg_work/b0_to_t1.mat
+
+ work=$out_dir/work
+ mkdir -p $work
+
+
+t1_ref=$epireg_work/t1_diffres.nii.gz
+
+#below was to crop out padding in dwi resampled to t1 space, but fslroi was not respecting phys space
+
+#t1_ref=$work/t1_ref.nii.gz
+#crop tight around ref image
+#echo flirt -applyxfm -in $b0 -out $t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
+#flirt -applyxfm -in $b0 -out $t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
+#croproi=`fslstats $t1_ref -w`
+#echo fslroi $t1_ref $t1_ref $croproi 
+#fslroi $t1_ref $t1_ref $croproi 
+
+
+
+ b0_unwarped=$work/b0_unwarped.nii.gz
+ warp=$work/fullWarp.nii.gz
+ warp_abs=$work/fullWarp_abs.nii.gz
+ detjac=$work/detjac.nii.gz
+
+ cp $b0 $work/b0.nii.gz
+ cp $grad_coeff $work/coeff.grad
+ #gradunwarp params
+ fov=0.4 #cm
+ fov=0.3 #cm
+ numpoints=300
+ numpoints=100
+
+
+ #run gradunwarp
+ pushd $work
+ echo gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g $grad_coeff -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
+ #temporary
+ singularity exec ~/singularity/khanlab_neuroglia-core_v1.0.1.img  gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g coeff.grad -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
+ popd
+
+#get jacobian determinant
+ echo reg_jacobian  -ref $b0_unwarped -def $warp_abs -jac $detjac
+  reg_jacobian  -ref $b0_unwarped -def $warp_abs -jac $detjac
+
+
+ 
+ jacobian=$work/fullWarp_jacobian.nii.gz
+combined_warp=$work/fullWarp_to_t1.nii.gz
+ echo convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
+ convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
+ echo convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$t1_ref  --out=$combined_warp
+ convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$t1_ref  --out=$combined_warp
+
+ out_dwi_vol=$out_dir/dwi.nii.gz
+ out_dwi_grad_dev=$out_dir/grad_dev.nii.gz
+ out_brain_mask=$out_dir/brainmask.nii.gz
+
+ echo applywarp --rel -i $dwi_vol -r $t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
+ applywarp --rel -i $dwi_vol -r $t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
+ echo applywarp --rel -i $brain_mask -r $t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+ applywarp --rel -i $brain_mask -r $t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+
+
+ #generate grad_dev file
+grad_dev=$work/grad_dev.nii.gz
+grad_dev_prefix=$work/grad_dev
+  echo calc_grad_perc_dev --fullwarp=$warp -o $grad_dev_prefix
+  calc_grad_perc_dev --fullwarp=$warp -o $grad_dev_prefix
+  echo fslmerge -t $grad_dev ${grad_dev_prefix}_x ${grad_dev_prefix}_y ${grad_dev_prefix}_z
+  fslmerge -t $grad_dev ${grad_dev_prefix}_x ${grad_dev_prefix}_y ${grad_dev_prefix}_z
+  echo fslmaths $grad_dev -div 100 $grad_dev 
+  fslmaths $grad_dev -div 100 $grad_dev 
+
+
+
+    echo vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $t1_ref  -t $xfm_b0_t1 --interp=spline
+    vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $t1_ref  -t $xfm_b0_t1 --interp=spline
+    echo fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
+    fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
+
+
+
+
+#rotate bvec
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+#copy bval
+echo cp $dwi_bval $out_dir/dwi.bval
+cp $dwi_bval $out_dir/dwi.bval
+
+
+dwi_bvec=$out_dir/dwi.bvec
+dwi_bval=$out_dir/dwi.bval
+dwi_vol=$out_dir/dwi.nii.gz
+brain_mask=$out_dir/brainmask.nii.gz
+grad_dev=$out_dir/grad_dev.nii.gz
+
+
+echo dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval --gradnonlin=$grad_dev
+dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval --gradnonlin=$grad_dev
+
+
+done
