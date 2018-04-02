@@ -1,6 +1,4 @@
-function prepForKurtosisDWI ( in_dwi_prefix, out_dwi_prefix, B)
-
-%B=[1300,2600];
+function prepForKurtosisDWI ( in_dwi_prefix, out_dwi_prefix)
 
 [out_path,out_name]=fileparts(out_dwi_prefix);
 
@@ -8,6 +6,7 @@ dwi_nii=load_nifti(sprintf('%s.nii.gz',in_dwi_prefix));
 bvec=importdata(sprintf('%s.bvec',in_dwi_prefix));
 bval=importdata(sprintf('%s.bval',in_dwi_prefix));
 
+B=findBvalShells(bval);
 %transpose if needed
 %if(size(bvec,2)==3)
 %bvec=bvec';

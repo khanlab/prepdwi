@@ -9,7 +9,7 @@ then
  echo "Usage $0 <in_dwi_name> <subjid/list>"
  echo " "
  echo " e.g.: "
- echo "   $0 ~/EpilepsyDatabase/EPL14B ~/test_dke multiband_topup_eddy EPL14_LHS_0066"
+ echo "   $0  multiband_topup_eddy EPL14_LHS_0066"
  exit 0
 fi
 
@@ -51,12 +51,11 @@ mkdir -p $out_dwi_dir
 in_dwi_prefix=$in_dwi_dir/dwi
 out_dwi_prefix=$out_dwi_dir/dwi_prep
 
-echo octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix',[1300, 2600])"
-octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix',[1300, 2600])"
+echo octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix')"
+octave --eval "prepForKurtosisDWI('$in_dwi_prefix','$out_dwi_prefix')"
 
 dke_param=${out_dwi_prefix}.dke_params
 
-#note that this uses the run_dke wrapper from neuroglia-vasst-dev
 echo run_dke $dke_param
 run_dke $dke_param
 
