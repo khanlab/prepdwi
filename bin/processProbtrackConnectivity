@@ -43,9 +43,9 @@ for subj in $subjids
 do
 
     bedpost_dir=$in_bedpost_root/$subj
-    if [ -n "$SCRATCH_DIR" ] #if running on compute cluster, use scratch dir
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
     then
-       out_track_dir=$SCRATCH_DIR/$subj/$out_name
+       out_track_dir=$scratch_dir/$subj/$out_name
    else
    out_track_dir=$in_bedpost_root/$subj/$out_name
    fi
@@ -152,9 +152,9 @@ do
    done
 
 
-    if [ -n "$SCRATCH_DIR" ] #if running on compute cluster, use scratch dir
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
     then
-        pushd $SCRATCH_DIR/$subj
+        pushd $scratch_dir/$subj
         echo "backing up scratch folder to $in_bedpost_root/$subj/$out_name.tar"
         tar -cvf $in_bedpost_root/$subj/$out_name.tar $out_name
         popd
