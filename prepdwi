@@ -424,23 +424,32 @@ do
 
 if [ -n "$reg_init_subj" ]
 then
+ echo --- Running atlas affine registration initialized with $reg_init_subj xfm ---
  echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
  $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
+ echo --- Running atlas b-spline registration ---
  echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
  $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
 
  else
-
+     
  if [ ! -e $subj/reg/affine_aladin_t1/${atlas_name}_$subj/${atlas_name}_to_${subj}.xfm ]
  then
+ echo --- Running atlas affine registration ---
  echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
  $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
+ else 
+ echo --- Skipping atlas affine registration ---
  fi
 
  if [ ! -e $subj/reg/bspline_f3d_t1/${atlas_name}_$subj/ctrlpt_${atlas_name}_to_${subj}.nii.gz ]
  then
+    echo --- Running atlas b-spline registration ---
     echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
     $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
+ else 
+  echo --- Skipping atlas b-spline registration ---
+
  fi
 
 
@@ -685,6 +694,7 @@ elif [ "$analysis_level" = "group" ]
  then
 
  #network connectivity matrix
+ echo --- Running stage participant2:  connectivity analysis ---
 
  if [ -e $work_folder/$atlas_space/labels/t1/$atlas_label_nii ]
  then

@@ -59,6 +59,12 @@ dke_param=${out_dwi_prefix}.dke_params
 echo run_dke $dke_param
 run_dke $dke_param
 
+#remove unzipped nii (run_dke creates it..)
+if [ -e $in_dwi_prefix.nii.gz -a -e $in_dwi_prefix.nii ]
+then
+  rm -f $in_dwi_prefix.nii
+fi
+
 #gzip output niftis 
 for nii in `ls $out_dwi_dir/*.nii`
 do 

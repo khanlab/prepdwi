@@ -29,9 +29,15 @@ flags="_"
 
 lastproc=${in_dwi##*_}
 if [ "$lastproc" = "regT1" ]
-then 
+then
   flags="${flags}space-T1w_"
 fi
+
+if [ "$lastproc" = "gradCorr" ]
+then
+  flags="${flags}space-T1wGC_"
+fi
+
 
 for subj in $subjids
 do
@@ -72,9 +78,9 @@ fi
 for map in FA MD L1 L2 L3 S0 V1 V2 V3
 do
 
- if [ ! -e $out_dwi_dir/${subjid}_dwi${flags}$map.nii.gz ]
+ if [ ! -e $out_dwi_dir/${subjid}_dwi${flags}proc-FSL_$map.nii.gz ]
  then
- cp -v $dwi_dir/dti_$map.nii.gz $out_dwi_dir/${subjid}_dwi${flags}$map.nii.gz
+ cp -v $dwi_dir/dti_$map.nii.gz $out_dwi_dir/${subjid}_dwi${flags}proc-FSL_$map.nii.gz
  fi
 
 done
@@ -91,7 +97,17 @@ fi
 in_dke=${dwi_dir}_dke
 if [ -e $in_dke ]
 then
- echo placeholder for copy dke
+for map in dmean dax drad fa kmean kax krad kfa mkt 
+do
+
+ if [ ! -e $out_dwi_dir/${subjid}_dwi${flags}proc-DKE_$map.nii.gz ]
+ then
+ cp -v $in_dke/$map.nii.gz $out_dwi_dir/${subjid}_dwi${flags}proc-DKE_$map.nii.gz
+ fi
+
+done
+
+
 fi
 
 done

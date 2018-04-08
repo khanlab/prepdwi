@@ -2,7 +2,7 @@
 
 # precondition:  processRegT1
 
-if [ "$#" -lt 1 ]
+if [ "$#" -lt 3 ]
 then
  echo " writes output to dwi/<input>_gradCorr"
  echo ""
@@ -57,17 +57,17 @@ xfm_b0_t1=$epireg_work/b0_to_t1.mat
  mkdir -p $work
 
 
-t1_ref=$epireg_work/t1_diffres.nii.gz
+b0_t1_ref=$epireg_work/b0_t1space_diffres.nii.gz
 
 #below was to crop out padding in dwi resampled to t1 space, but fslroi was not respecting phys space
 
-#t1_ref=$work/t1_ref.nii.gz
+#b0_t1_ref=$work/t1_ref.nii.gz
 #crop tight around ref image
-#echo flirt -applyxfm -in $b0 -out $t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
-#flirt -applyxfm -in $b0 -out $t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
-#croproi=`fslstats $t1_ref -w`
-#echo fslroi $t1_ref $t1_ref $croproi 
-#fslroi $t1_ref $t1_ref $croproi 
+#echo flirt -applyxfm -in $b0 -out $b0_t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
+#flirt -applyxfm -in $b0 -out $b0_t1_ref -ref $t1_ref -interp nearestneighbour -v -init $xfm_b0_t1
+#croproi=`fslstats $b0_t1_ref -w`
+#echo fslroi $b0_t1_ref $t1_ref $croproi 
+#fslroi $b0_t1_ref $t1_ref $croproi 
 
 
 
@@ -80,16 +80,18 @@ t1_ref=$epireg_work/t1_diffres.nii.gz
  cp $grad_coeff $work/coeff.grad
  #gradunwarp params
  fov=0.4 #cm
- fov=0.3 #cm
  numpoints=300
+ 
+ #less aggressive parameters for memory conservation
+ fov=0.3 #cm
  numpoints=100
 
 
  #run gradunwarp
  pushd $work
- echo gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g $grad_coeff -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
- #temporary
- singularity exec ~/singularity/khanlab_neuroglia-core_v1.0.1.img  gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g coeff.grad -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
+  gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g $grad_coeff -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
+## for testing:
+# singularity exec ~/singularity/khanlab_neuroglia-core_v1.0.1.img  gradient_unwarp.py b0.nii.gz b0_unwarped.nii.gz siemens -g coeff.grad -n --fovmin -$fov --fovmax $fov --numpoints $numpoints --verbose 
  popd
 
 #get jacobian determinant
@@ -102,17 +104,17 @@ t1_ref=$epireg_work/t1_diffres.nii.gz
 combined_warp=$work/fullWarp_to_t1.nii.gz
  echo convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
  convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
- echo convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$t1_ref  --out=$combined_warp
- convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$t1_ref  --out=$combined_warp
+ echo convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$b0_t1_ref  --out=$combined_warp
+ convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$b0_t1_ref  --out=$combined_warp
 
  out_dwi_vol=$out_dir/dwi.nii.gz
  out_dwi_grad_dev=$out_dir/grad_dev.nii.gz
  out_brain_mask=$out_dir/brainmask.nii.gz
 
- echo applywarp --rel -i $dwi_vol -r $t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
- applywarp --rel -i $dwi_vol -r $t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
- echo applywarp --rel -i $brain_mask -r $t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
- applywarp --rel -i $brain_mask -r $t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+ echo applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
+ applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
+ echo applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+ applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
 
 
  #generate grad_dev file
@@ -127,12 +129,10 @@ grad_dev_prefix=$work/grad_dev
 
 
 
-    echo vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $t1_ref  -t $xfm_b0_t1 --interp=spline
-    vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $t1_ref  -t $xfm_b0_t1 --interp=spline
+    echo vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
+    vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
     echo fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
     fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
-
-
 
 
 #rotate bvec
@@ -148,6 +148,20 @@ dwi_bval=$out_dir/dwi.bval
 dwi_vol=$out_dir/dwi.nii.gz
 brain_mask=$out_dir/brainmask.nii.gz
 grad_dev=$out_dir/grad_dev.nii.gz
+
+#crop all tight around b0
+roixyzt=`fslstats $b0_t1_ref -w`
+roixyz=${roixyzt%0\ 1*} 
+for nii in dwi brainmask grad_dev
+do
+
+echo fslroi $out_dir/$nii.nii.gz $out_dir/$nii.nii.gz  $roixyz
+fslroi $out_dir/$nii.nii.gz $out_dir/$nii.nii.gz  $roixyz
+
+done
+
+
+
 
 
 echo dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval --gradnonlin=$grad_dev
