@@ -642,6 +642,9 @@ elif [ "$analysis_level" = "group" ]
     #TODO: move this to a separate script
 
     #need to make a subjlist for this command 
+
+    #TODO:  use GNU parallel here:
+
     for subj in $subjlist
     do
         subj=`fixsubj $subj`
@@ -696,6 +699,7 @@ elif [ "$analysis_level" = "group" ]
  #network connectivity matrix
  echo --- Running stage participant2:  connectivity analysis ---
 
+
  if [ -e $work_folder/$atlas_space/labels/t1/$atlas_label_nii ]
  then
      atlas_label_nii=`realpath $work_folder/$atlas_space/labels/t1/$atlas_label_nii`
@@ -722,12 +726,19 @@ elif [ "$analysis_level" = "group" ]
     fi
 
  fi
- 
+
  pushd $work_folder
   for subj in $subjlist 
   do
       #add on sub- if not exists
       subj=`fixsubj $subj`
+
+     #check if bedpost results exist
+      if [ ! -e $derivatives/bedpost/$subj/dyads1.nii.gz ]
+      then
+        echo "Bedpost processing in $derivatives/bedpost/$subj not complete, skipping ..."
+        continue
+      fi
 
      echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $subj
      $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj/dwi/${subj}_dwi_atlas-${atlas}_connectivity.csv $subj
