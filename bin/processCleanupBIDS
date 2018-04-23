@@ -35,7 +35,17 @@ fi
 
 if [ "$lastproc" = "gradCorr" ]
 then
+
+  secondlastproc=${in_dwi%_${lastproc}}
+  secondlastproc=${secondlastproc##*_}
+
+  if [ "$secondlastproc" = "regT1" ]
+  then
   flags="${flags}space-T1wGC_"
+  else
+  flags="${flags}space-nativeGC_"
+  fi
+
 fi
 
 

@@ -13,8 +13,17 @@ fi
 output_dir=.
 
 in_dwi=$1
+
 in_regT1=${in_dwi}_regT1
+
+if [ -e "$in_regT1" ]
+then
 out_name=${in_regT1}_gradCorr
+do_regT1=1
+else
+out_name=${in_dwi}_gradCorr
+do_regT1=0
+fi
 
 grad_coeff=$2
 shift 2
@@ -104,18 +113,33 @@ b0_t1_ref=$epireg_work/b0_t1space_diffres.nii.gz
 combined_warp=$work/fullWarp_to_t1.nii.gz
  echo convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
  convertwarp --abs --ref=$b0_unwarped --warp1=$warp_abs --relout --out=$warp --jacobian=$jacobian
+
+ if [ "$do_regT1" = 1 ]
+ then
  echo convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$b0_t1_ref  --out=$combined_warp
  convertwarp --rel --relout --warp1=$warp  --postmat=$xfm_b0_t1 --ref=$b0_t1_ref  --out=$combined_warp
+fi
 
  out_dwi_vol=$out_dir/dwi.nii.gz
  out_dwi_grad_dev=$out_dir/grad_dev.nii.gz
  out_brain_mask=$out_dir/brainmask.nii.gz
+
+ if [ "$do_regT1" = 1 ]
+ then
 
  echo applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
  applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
  echo applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
  applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
 
+ else
+
+ echo applywarp --rel -i $dwi_vol -r $b0_unwarped  -w $warp --interp=spline -o $out_dwi_vol
+ applywarp --rel -i $dwi_vol -r $b0_unwarped  -w $warp --interp=spline -o $out_dwi_vol
+ echo applywarp --rel -i $brain_mask -r $b0_unwarped  -w $warp --interp=nn -o $out_brain_mask
+ applywarp --rel -i $brain_mask -r $b0_unwarped  -w $warp --interp=nn -o $out_brain_mask
+
+ fi
 
  #generate grad_dev file
 grad_dev=$work/grad_dev.nii.gz
@@ -128,16 +152,30 @@ grad_dev_prefix=$work/grad_dev
   fslmaths $grad_dev -div 100 $grad_dev 
 
 
+if [ "$do_regT1" = 1 ]
+ then
 
     echo vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
     vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
+else
+    cp -v $grad_dev $out_dwi_grad_dev
+
+fi
+
     echo fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
     fslmaths $out_dwi_grad_dev -mas $out_brain_mask $out_dwi_grad_dev
 
+if [ "$do_regT1" = 1 ]
+ then
 
 #rotate bvec
 echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
 rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+
+else
+cp -v $dwi_bvec $out_dir/dwi.bvec
+fi
+
 #copy bval
 echo cp $dwi_bval $out_dir/dwi.bval
 cp $dwi_bval $out_dir/dwi.bval
@@ -148,6 +186,10 @@ dwi_bval=$out_dir/dwi.bval
 dwi_vol=$out_dir/dwi.nii.gz
 brain_mask=$out_dir/brainmask.nii.gz
 grad_dev=$out_dir/grad_dev.nii.gz
+
+
+if [ "$do_regT1" = 1 ]
+then
 
 #crop all tight around b0
 roixyzt=`fslstats $b0_t1_ref -w`
@@ -161,7 +203,7 @@ fslroi $out_dir/$nii.nii.gz $out_dir/$nii.nii.gz  $roixyz
 done
 
 
-
+fi
 
 
 echo dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval --gradnonlin=$grad_dev

@@ -23,14 +23,14 @@ in_atlas_dir=$execpath/atlases
 matching_dwi=
 participant_label=
 notopup=0
-dke=0
+nodke=0
 bedpost=1
 matching_T1w=
 n_cpus=8
 reg_init_subj=
 grad_coeff_file=
 scratch_dir=
-
+noregT1=0
 
 #default:
 atlas=dosenbach
@@ -51,9 +51,10 @@ then
  echo "          [--grad_coeff_file GRAD_COEFF_FILE]"
  echo "          [-w WORK_DIR]  (scratch directory)"
  echo ""
+ echo "          [--no-regT1]"
  echo "          [--no-topup]"
  echo "          [--no-bedpost]"
- echo "          [--dke]"
+ echo "          [--no-dke]"
  echo "          [--n_cpus NCPUS] (for bedpost, default: 8) "
  echo ""
  echo " participant2 (probtrack connectivity) options:"
@@ -92,12 +93,14 @@ while :; do
 	     usage
             exit
               ;;
+    --no-regT1 )
+	noregT1=1;;
      --no-topup )
 	notopup=1;;
      --no-bedpost )
 	bedpost=0;;
-     --dke )
-	dke=1;;
+     --no-dke )
+	nodke=1;;
      --n_cpus )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 n_cpus=$2
@@ -296,7 +299,12 @@ then
         if [ -e $grad_coeff_file ]
         then
             grad_coeff_file=`realpath $grad_coeff_file`
-            final_suffix=regT1_gradCorr
+            if [ "$noregT1" = "1" ]
+            then
+            final_suffix=_gradCorr
+            else
+            final_suffix=_regT1_gradCorr
+            fi
         do_gradcorr=1
         else
             echo "grad_coeff_file $grad_coeff_file does not exist! exiting!"
@@ -304,7 +312,12 @@ then
         fi
 
 else
-    final_suffix=regT1
+    if [ "$noregT1" = "1" ]
+    then
+    final_suffix=
+    else
+    final_suffix=_regT1
+    fi
     do_gradcorr=0
 fi
 
@@ -459,7 +472,7 @@ done #atlas_dir
 
 
 #only proceed with pre-processing if preproc dwi does not exist
-#preproc_dwi=`ls $subj/dwi/uncorrected_*_${final_suffix}/dwi.nii.gz | tail -n 1`
+#preproc_dwi=`ls $subj/dwi/uncorrected_*${final_suffix}/dwi.nii.gz | tail -n 1`
 #echo returnval $?
 #echo before preproc
 #if [ ! -e $preproc_dwi ]
@@ -539,6 +552,9 @@ echo "--- Running processEddy ---"
   eddy=topup_eddy
  fi
 
+ if [ "$noregT1" = "0" ]
+ then
+
   if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
   then
 echo "--- Running processRegT1 ---"
@@ -548,8 +564,17 @@ else
     echo "--- Skipping processRegT1 ---"
   fi
 
-  if [ $do_gradcorr = 1 ]
+  else 
+      echo "--- Skipping processRegT1 (--no-regT1) ---"
+  fi
+
+
+  if [ $do_gradcorr = 1  ]
   then
+
+      if [ "$noregT1" = "0" ]
+      then
+
    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1_gradCorr/dwi.nii.gz ]
    then
 echo "--- Running processGradUnwarp ---"
@@ -558,13 +583,30 @@ echo "--- Running processGradUnwarp ---"
   else 
 echo "--- Skipping processGradUnwarp ---"
   fi
+    else
+
+
+   if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_gradCorr/dwi.nii.gz ]
+   then
+    echo "--- Running processGradUnwarp ---"
+      echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
+      $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
+      else 
+    echo "--- Skipping processGradUnwarp ---"
+      fi
+
+
+
+    fi
+
+
   fi
 
 
   #else #if preproc dwi exists
 
  #if exists already, just need to set eddy to the proper value
- if [ -e $subj/dwi/uncorrected_denoise_unring_eddy_regT1/dwi.nii.gz ]
+ if [ -e $subj/dwi/uncorrected_denoise_unring_eddy${final_suffix}/dwi.nii.gz ]
  then
 	 eddy=eddy
  else
@@ -577,8 +619,8 @@ echo "--- Skipping processGradUnwarp ---"
 
 
   #check if multi-shell
-  bval=$subj/dwi/uncorrected_denoise_unring_${eddy}_${final_suffix}/dwi.bval
-  shells=$subj/dwi/uncorrected_denoise_unring_${eddy}_${final_suffix}/dwi.shells
+  bval=$subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.bval
+  shells=$subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.shells
  if [ ! -e $shells ]
  then
   echo "Checking number of shells..."
@@ -600,11 +642,11 @@ echo "--- Skipping processGradUnwarp ---"
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
-    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_${final_suffix}/bedpost.bedpostX/dyads1.nii.gz ]
+    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/bedpost.bedpostX/dyads1.nii.gz ]
     then
 echo "--- Running processBedpost ---"
-    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_${final_suffix} $subj
-    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}_${final_suffix} $subj
+    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj
+    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj
     else
         echo "--- Skipping processBedpost ---"
     fi
@@ -612,22 +654,31 @@ echo "--- Running processBedpost ---"
         echo "--- Skipping processBedpost (--no-bedpost) ---"
   fi 
 
+
   if [ "$is_multishell" = 1 ]
   then 
-    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_${final_suffix}_dke/kmean.nii.gz ]
+
+    
+      if [ "$nodke" = "0" ]
+    then
+      if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}_dke/kmean.nii.gz ]
     then
 echo "--- Running processDKE ---"
-    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}_${final_suffix} $subj
-    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}_${final_suffix} $subj
+    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj
+    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj
     else
         echo "--- Skipping processDKE ---"
+    fi
+    else
+
+        echo "--- Skipping processDKE (--no-dke) ---"
     fi
   fi 
 
   #internally checks if files already exist before copying
 echo "--- Running processCleanupBIDS ---"
-  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}_${final_suffix} $derivatives $subj
-  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}_${final_suffix} $derivatives $subj
+  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj
+  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj
 
 done
 
