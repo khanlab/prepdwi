@@ -30,7 +30,7 @@ n_cpus=8
 reg_init_subj=
 grad_coeff_file=
 scratch_dir=
-noregT1=1
+noregT1=0
 
 #default:
 atlas=dosenbach
@@ -51,7 +51,7 @@ then
  echo "          [--grad_coeff_file GRAD_COEFF_FILE]"
  echo "          [-w WORK_DIR]  (scratch directory)"
  echo ""
- echo "          [--no-regT1] (regT1 disabled for now - bug found)"
+ echo "          [--no-regT1]"
  echo "          [--no-topup]"
  echo "          [--no-bedpost]"
  echo "          [--no-dke]"
@@ -466,7 +466,11 @@ then
  fi
 
 
- fi
+ fi # if [ -n "$reg_init_subj" ]
+
+
+
+
 
 done #atlas_dir
 

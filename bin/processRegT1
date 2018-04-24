@@ -81,17 +81,17 @@ c3d_affine_tool $epireg_work/b0_to_t1_aladin.xfm  -ref $t1 -src $b0 -ras2fsl -o 
 diff_res=`fslval $b0 pixdim1`
 b0_t1_ref=$epireg_work/b0_t1space_diffres.nii.gz
 
-#rotate bvec
-echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
-rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
-#copy bval
-echo cp $dwi_bval $out_dir/dwi.bval
-cp $dwi_bval $out_dir/dwi.bval
-
 #generate reference at dwi resolution in t1 space
 echo flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0_t1
 flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0_t1
 
+#rotate bvec
+echo octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+
+#copy bval
+echo cp $dwi_bval $out_dir/dwi.bval
+cp $dwi_bval $out_dir/dwi.bval
 
 
  #resample dwi to t1 space 
