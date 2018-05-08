@@ -15,6 +15,18 @@ subj=$1
  echo $subj
 }
 
+function fixsess {
+#add on ses- if not exists
+sess=$1
+ if [ ! "${sess:0:4}" = "ses-" ]
+ then
+  sess="sub-$sess"
+ fi
+ echo $sess
+}
+
+
+
 execpath=`dirname $0`
 execpath=`realpath $execpath`
 
@@ -403,27 +415,41 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
 for subj in $subjlist 
 do
 
-#add on sub- if not exists
-subj=`fixsubj $subj`
+    #add on sub- if not exists
+    subj=`fixsubj $subj`
 
-N_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | wc -l`
-in_t1w=`eval ls $in_bids/$subj/anat/${subj}${searchstring_t1w} | head -n 1`
+    #loop over sub- and sub-/ses-
+    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
+    do
 
-if [ ! -e $subj/t1/t1.nii.gz ]
+        subj_sess_dir=${subjfolder%/dwi}
+        subj_sess_dir=${subj_sess_dir##$in_bids/}
+        sess=${subj_sess_dir##*/}
+        subj_sess_prefix=${subj}_${sess}
+        echo subjfolder $subjfolder
+        echo subj_sess_dir $subj_sess_dir
+        echo sess $sess
+        echo subj_sess_prefix $subj_sess_prefix
+
+
+N_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | wc -l`
+in_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | head -n 1`
+
+if [ ! -e $subj_sess_prefix/t1/t1.nii.gz ]
 then
 echo --- Running importT1 ---
 echo Found $N_t1w matching T1w, using first found: $in_t1w
-echo $execpath/bin/importT1 $in_t1w $subj
-$execpath/bin/importT1 $in_t1w $subj
+echo $execpath/bin/importT1 $in_t1w $subj_sess_prefix
+$execpath/bin/importT1 $in_t1w $subj_sess_prefix
 else
 echo --- Skipping importT1 ---
 fi
 
-if [ ! -e $subj/${t1_img_type} ]
+if [ ! -e $subj_sess_prefix/${t1_img_type} ]
 then
 echo --- Running preprocT1 ---
-echo $execpath/bin/preprocT1 $subj
- $execpath/bin/preprocT1 $subj
+echo $execpath/bin/preprocT1 $subj_sess_prefix
+ $execpath/bin/preprocT1 $subj_sess_prefix
  else
 echo --- Skipping preprocT1 ---
 fi
@@ -435,31 +461,33 @@ do
  atlas_name=${atlas_dir##*/}
 
 
+#TODO: need to convert reg_init_subj to subj_sess
+
 if [ -n "$reg_init_subj" ]
 then
  echo --- Running atlas affine registration initialized with $reg_init_subj xfm ---
- echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
- $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj -i $reg_init_subj
+ echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj_sess_prefix -i $reg_init_subj
+ $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj_sess_prefix -i $reg_init_subj
  echo --- Running atlas b-spline registration ---
- echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
- $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
+ echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj_sess_prefix
+ $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj_sess_prefix
 
  else
      
- if [ ! -e $subj/reg/affine_aladin_t1/${atlas_name}_$subj/${atlas_name}_to_${subj}.xfm ]
+ if [ ! -e $subj_sess_prefix/reg/affine_aladin_t1/${atlas_name}_$subj_sess_prefix/${atlas_name}_to_${subj_sess_prefix}.xfm ]
  then
  echo --- Running atlas affine registration ---
- echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
- $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj 
+ echo $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj_sess_prefix 
+ $execpath/bin/reg_intersubj_aladin  t1 $t1_img_type $atlas_name $subj_sess_prefix 
  else 
  echo --- Skipping atlas affine registration ---
  fi
 
- if [ ! -e $subj/reg/bspline_f3d_t1/${atlas_name}_$subj/ctrlpt_${atlas_name}_to_${subj}.nii.gz ]
+ if [ ! -e $subj_sess_prefix/reg/bspline_f3d_t1/${atlas_name}_$subj_sess_prefix/ctrlpt_${atlas_name}_to_${subj_sess_prefix}.nii.gz ]
  then
     echo --- Running atlas b-spline registration ---
-    echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
-    $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj
+    echo $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj_sess_prefix
+    $execpath/bin/reg_bspline_f3d t1 $t1_img_type $atlas_name $subj_sess_prefix
  else 
   echo --- Skipping atlas b-spline registration ---
 
@@ -483,37 +511,37 @@ done #atlas_dir
 #then
 #echo about to preproc
 
-Ndwi=`eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi} | wc -l`
+Ndwi=`eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi} | wc -l`
 
- if [ ! -e $subj/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
+ if [ ! -e $subj_sess_prefix/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
  then
 echo "--- Running importDWI ---"
  echo Ndwi=$Ndwi
 echo Found $Ndwi matching dwi, using all: 
- eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}
+ eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}
 
- echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj"
- $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj/dwi/${subj}${searchstring_dwi}` $subj
+ echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix"
+ $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix
 else
 
 echo "--- Skipping importDWI ---"
  fi
 
- if [ ! -e $subj/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
+ if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
  then
 echo "--- Running processDwiDenoise ---"
- echo $execpath/bin/processDwiDenoise uncorrected $subj
- $execpath/bin/processDwiDenoise uncorrected $subj
+ echo $execpath/bin/processDwiDenoise uncorrected $subj_sess_prefix
+ $execpath/bin/processDwiDenoise uncorrected $subj_sess_prefix
  else
 
 echo "--- Skipping processDwiDenoise ---"
  fi
 
- if [ ! -e $subj/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
+ if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
  then
 echo "--- Running processUnring ---"
- echo $execpath/bin/processUnring uncorrected_denoise $subj
- $execpath/bin/processUnring uncorrected_denoise $subj
+ echo $execpath/bin/processUnring uncorrected_denoise $subj_sess_prefix
+ $execpath/bin/processUnring uncorrected_denoise $subj_sess_prefix
 
  else
      echo "--- Skipping processUnring ---"
@@ -523,11 +551,11 @@ echo "--- Running processUnring ---"
  if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
  then
  
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
+  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
   then
 echo "--- Running processEddyNoTopUp ---"
-   echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj
-   $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj
+   echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
+   $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
    else
 echo "--- Skipping processEddyNoTopUp ---"
   fi
@@ -535,20 +563,20 @@ echo "--- Skipping processEddyNoTopUp ---"
    eddy=eddy
  else
 
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
+  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
   then 
 echo "--- Running processTopUp ---"
-    echo $execpath/bin/processTopUp uncorrected_denoise_unring $subj
-    $execpath/bin/processTopUp uncorrected_denoise_unring $subj
+    echo $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
+    $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
 else
 echo "--- Skipping processTopUp ---"
   fi
 
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
+  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
   then
 echo "--- Running processEddy ---"
-    echo $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj
-    $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj
+    echo $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
+    $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
 
     else
         echo "--- Skipping processEddy ---"
@@ -559,11 +587,11 @@ echo "--- Running processEddy ---"
  if [ "$noregT1" = "0" ]
  then
 
-  if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
+  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
   then
 echo "--- Running processRegT1 ---"
-  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
-  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj
+  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix
+  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix
 else
     echo "--- Skipping processRegT1 ---"
   fi
@@ -579,22 +607,22 @@ else
       if [ "$noregT1" = "0" ]
       then
 
-   if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_regT1_gradCorr/dwi.nii.gz ]
+   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_regT1_gradCorr/dwi.nii.gz ]
    then
 echo "--- Running processGradUnwarp ---"
-  echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
-  $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
+  echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
+  $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
   else 
 echo "--- Skipping processGradUnwarp ---"
   fi
     else
 
 
-   if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}_gradCorr/dwi.nii.gz ]
+   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_gradCorr/dwi.nii.gz ]
    then
     echo "--- Running processGradUnwarp ---"
-      echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
-      $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj
+      echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
+      $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
       else 
     echo "--- Skipping processGradUnwarp ---"
       fi
@@ -610,7 +638,7 @@ echo "--- Skipping processGradUnwarp ---"
   #else #if preproc dwi exists
 
  #if exists already, just need to set eddy to the proper value
- if [ -e $subj/dwi/uncorrected_denoise_unring_eddy${final_suffix}/dwi.nii.gz ]
+ if [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy${final_suffix}/dwi.nii.gz ]
  then
 	 eddy=eddy
  else
@@ -623,8 +651,8 @@ echo "--- Skipping processGradUnwarp ---"
 
 
   #check if multi-shell
-  bval=$subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.bval
-  shells=$subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.shells
+  bval=$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.bval
+  shells=$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.shells
  if [ ! -e $shells ]
  then
   echo "Checking number of shells..."
@@ -646,11 +674,11 @@ echo "--- Skipping processGradUnwarp ---"
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
-    if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/bedpost.bedpostX/dyads1.nii.gz ]
+    if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/bedpost.bedpostX/dyads1.nii.gz ]
     then
 echo "--- Running processBedpost ---"
-    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj
-    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj
+    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
+    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
     else
         echo "--- Skipping processBedpost ---"
     fi
@@ -665,11 +693,11 @@ echo "--- Running processBedpost ---"
     
       if [ "$nodke" = "0" ]
     then
-      if [ ! -e $subj/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}_dke/kmean.nii.gz ]
+      if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}_dke/kmean.nii.gz ]
     then
 echo "--- Running processDKE ---"
-    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj
-    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj
+    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
+    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
     else
         echo "--- Skipping processDKE ---"
     fi
@@ -681,15 +709,17 @@ echo "--- Running processDKE ---"
 
   #internally checks if files already exist before copying
 echo "--- Running processCleanupBIDS ---"
-  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj
-  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj
+  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj_sess_prefix
+  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj_sess_prefix
 
-done
+done #loop over subj/sess
+
+done #loop over subj
 
 
 popd
 
-
+#end participant
 elif [ "$analysis_level" = "group" ]
  then
 
@@ -704,20 +734,28 @@ elif [ "$analysis_level" = "group" ]
     do
         subj=`fixsubj $subj`
  
-        
+    #loop over sub- and sub-/ses-
+    for subjfolder in `ls $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
+    do
+
+        subj_sess_dir=${subjfolder%/dwi}
+        sess=${subj_sess_dir##*/}
+        subj_sess_prefix=${subj}_${sess}
+
+       
     pushd $work_folder
-    $execpath/bin/genOverlay_brainmask $subj > /dev/null
-    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_eddy/dwi.nii.gz dwi/uncorrected_*_eddy/brainmask.nii.gz dwi_brainmask $subj > /dev/null
+    $execpath/bin/genOverlay_brainmask $subj_sess_prefix > /dev/null
+    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_eddy/dwi.nii.gz dwi/uncorrected_*_eddy/brainmask.nii.gz dwi_brainmask $subj_sess_prefix > /dev/null
 
     for atlas_dir in `ls -d $in_atlas_dir/*`
     do
      atlas_name=${atlas_dir##*/}
-     $execpath/bin/genOverlay_affine_atlasReg $atlas_name $subj > /dev/null
-     $execpath/bin/genOverlay_bspline_atlasReg $atlas_name $subj > /dev/null
+     $execpath/bin/genOverlay_affine_atlasReg $atlas_name $subj_sess_prefix > /dev/null
+     $execpath/bin/genOverlay_bspline_atlasReg $atlas_name $subj_sess_prefix > /dev/null
     done
 
     #dwi and T1 reg
-    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_regT1/dwi.nii.gz dwi/uncorrected_*_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj > /dev/null
+    $execpath/bin/genOverlay_mask  dwi/uncorrected_*_regT1/dwi.nii.gz dwi/uncorrected_*_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj_sess_prefix > /dev/null
     
 
     popd
@@ -725,7 +763,7 @@ elif [ "$analysis_level" = "group" ]
     #combine into single html
     # copy over png files, and grep href, and make first/last line
     mkdir -p $derivatives/reports/images
-    final_qc=$derivatives/reports/$subj.html
+    final_qc=$derivatives/reports/$subj_sess_prefix.html
     echo "<HTML><TITLE>$subj</TITLE><BODY BGCOLOR=\"#aaaaff\">" > $final_qc
     grep -h href $work_folder/QC/*/index.html >> $final_qc
     echo "</BODY></HTML>" >>$final_qc
@@ -740,7 +778,10 @@ elif [ "$analysis_level" = "group" ]
     rm $work_folder/QC/*/*
     rmdir  $work_folder/QC/*
     rmdir $work_folder/QC
-    done 
+
+    done #subj-ses
+
+    done #subj
 
     # we still need QC for:
     # processing performed
@@ -788,17 +829,27 @@ elif [ "$analysis_level" = "group" ]
       #add on sub- if not exists
       subj=`fixsubj $subj`
 
+      #loop over sub- and sub-/ses-
+    for subjfolder in `ls $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
+    do
+
+        subj_sess_dir=${subjfolder%/dwi}
+        sess=${subj_sess_dir##*/}
+        subj_sess_prefix=${subj}_${sess}
+
+
      #check if bedpost results exist
-      if [ ! -e $derivatives/bedpost/$subj/dyads1.nii.gz ]
+      if [ ! -e $derivatives/bedpost/$subj_sess_prefix/dyads1.nii.gz ]
       then
-        echo "Bedpost processing in $derivatives/bedpost/$subj not complete, skipping ..."
+        echo "Bedpost processing in $derivatives/bedpost/$subj_sess_prefix not complete, skipping ..."
         continue
       fi
 
-     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $subj
-     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj/dwi/${subj}_dwi_atlas-${atlas}_connectivity.csv $subj
+     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj_sess_prefix/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
+     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj_sess_prefix/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
 
-  done
+ done #subjsess
+  done #subj
 
 
    popd

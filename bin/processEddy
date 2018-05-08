@@ -95,8 +95,8 @@ echo $indx > $eddy_work/index.txt
 
 
 
-echo eddy --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v
-eddy --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v
+echo eddy_openmp --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v --repol
+eddy_openmp --imain=$eddy_work/dwi_uncorrected --mask=$brainmask --acqp=$topup_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$eddy_work/dwi_uncorrected.bvec --bvals=$eddy_work/dwi_uncorrected.bval --topup=$topup_work/topup --out=$eddy_dir/dwi -v --repol
 
 dwi_bvec=$eddy_dir/dwi.eddy_rotated_bvecs
 dwi_bval=$eddy_work/dwi_uncorrected.bval

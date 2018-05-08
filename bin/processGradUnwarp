@@ -16,15 +16,6 @@ in_dwi=$1
 
 in_regT1=${in_dwi}_regT1
 
-if [ -e "$in_regT1" ]
-then
-out_name=${in_regT1}_gradCorr
-do_regT1=1
-else
-out_name=${in_dwi}_gradCorr
-do_regT1=0
-fi
-
 grad_coeff=$2
 shift 2
 
@@ -46,6 +37,16 @@ subj_dir=$output_dir/$subj
 
 dwi_dir=$subj_dir/dwi/${in_dwi}
 regT1_dir=$subj_dir/dwi/${in_regT1}
+
+if [ -e "$regT1_dir" ]
+then
+out_name=${in_regT1}_gradCorr
+do_regT1=1
+else
+out_name=${in_dwi}_gradCorr
+do_regT1=0
+fi
+
 
 out_dir=$subj_dir/dwi/${out_name}
 t1_dir=$subj_dir/t1
@@ -87,13 +88,11 @@ b0_t1_ref=$epireg_work/b0_t1space_diffres.nii.gz
 
  cp $b0 $work/b0.nii.gz
  cp $grad_coeff $work/coeff.grad
- #gradunwarp params
- fov=0.4 #cm
- numpoints=300
+ #gradunwarp params -> same as default in gradcorrect app (for consistent warps)
+ fov=0.2 #cm
+ numpoints=150
+ interporder=3
  
- #less aggressive parameters for memory conservation
- fov=0.3 #cm
- numpoints=100
 
 
  #run gradunwarp

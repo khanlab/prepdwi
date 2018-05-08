@@ -6,12 +6,12 @@ bvecs=dlmread(in_bvec_file);
 src_hdr=load_nifti(in_src_nii,1);
 dest_hdr=load_nifti(in_dest_nii,1);
 
-if (dest_hdr.sform_code~= 1)
+if (dest_hdr.sform_code < 1)
     disp(sprintf('Problem to sformcode in %s!',in_dest_nii));
     exit;
 end
 
-if (src_hdr.sform_code ~= 1)
+if (src_hdr.sform_code < 1)
     disp(sprintf('Problem to sformcode in %s!',in_src_nii));
     exit;
 end
