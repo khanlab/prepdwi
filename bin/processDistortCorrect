@@ -1,0 +1,91 @@
+#!/bin/bash
+
+#dependencies: fsl (dc, fslmerge)
+
+if [ "$#" -lt 2 ]
+then
+ echo "Writes output to dwi/<in>_dc"
+ echo "Usage $0 <in_uncorrected> <subjid/list>"
+ exit 0
+fi
+
+output_dir=`pwd`
+
+in_uncorrected=$1
+out_dc=${in_uncorrected}_dc
+shift 1
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+
+
+uncorr_dir=$subj_dir/dwi/${in_uncorrected}
+dc_dir=$subj_dir/dwi/${out_dc}
+
+
+work=$dc_dir/work
+
+mkdir -p $dc_dir $work
+
+#req'd images: dwi
+in_b0=$uncorr_dir/dti_S0.nii.gz
+in_dwi=$uncorr_dir/dwi.nii.gz
+in_mask=$uncorr_dir/brainmask.nii.gz
+in_bval=$uncorr_dir/dwi.bval
+in_bvec=$uncorr_dir/dwi.bvec
+
+t1=$subj_dir/t1/t1.brain.inorm.nii.gz
+
+t1_inverted=$work/t1_inverted.nii.gz
+#preproc to invert intensities so it looks more like B0 T2w image
+echo fslmaths $t1 -add 1 -bin -div $t1 -mas $t1 $t1_inverted
+fslmaths $t1 -add 1 -bin -div $t1 -mas $t1 $t1_inverted
+
+t1_to_dti=$work/t1_to_b0_rigid.nii.gz
+xfm_t1_to_dti=$work/t1_to_dti.xfm
+
+#first rigidly register t1 to the b0
+echo reg_aladin -flo $t1_inverted -ref $in_b0 -res $t1_to_dti -aff $xfm_t1_to_dti -rigOnly
+reg_aladin -flo $t1_inverted -ref $in_b0 -res $t1_to_dti -aff $xfm_t1_to_dti -rigOnly
+
+deformed_b0=$work/b0_deformed_to_regT1.nii.gz
+b0_t1_cpp=$work/b0_to_regT1_cpp.nii.gz
+
+#now, use deformable registration from b0 to t1
+echo reg_f3d -flo $in_b0 -ref $t1_to_dti -res $deformed_b0 -cpp $b0_t1_cpp -be 0.001
+reg_f3d -flo $in_b0 -ref $t1_to_dti -res $deformed_b0 -cpp $b0_t1_cpp -be 0.001 
+
+out_dwi=$dc_dir/dwi.nii.gz
+out_mask=$dc_dir/brainmask.nii.gz
+out_bvec=$dc_dir/dwi.bvec
+out_bval=$dc_dir/dwi.bval
+
+#warp DWI
+echo reg_resample -flo $in_dwi -ref $t1_to_dti -cpp $b0_t1_cpp -res $out_dwi
+reg_resample -flo $in_dwi -ref $t1_to_dti -cpp $b0_t1_cpp -res $out_dwi
+
+#warp brainmask
+echo reg_resample -flo $in_mask -ref $t1_to_dti -cpp $b0_t1_cpp -res $out_mask -NN 0
+reg_resample -flo $in_mask -ref $t1_to_dti -cpp $b0_t1_cpp -res $out_mask -NN 0
+cp -v $in_bvec $out_bvec
+cp -v $in_bval $out_bval
+
+echo dtifit -k $out_dwi -o $dc_dir/dti -m $out_mask  -r $out_bvec -b $out_bval
+dtifit -k $out_dwi -o $dc_dir/dti -m $out_mask  -r $out_bvec -b $out_bval
+
+
+done
+
+

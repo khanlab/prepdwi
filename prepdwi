@@ -90,14 +90,16 @@ popd > /dev/null
 fi
 
 
+#=====================================================================
+#---------------------  ARGUMENT PARSING -----------------------------
+#=====================================================================
+
 in_bids=$1 
 out_folder=$2 
 analysis_level=$3
 
 
 shift 3
-
-
 
 while :; do
       case $1 in
@@ -294,6 +296,9 @@ while :; do
 
 shift $((OPTIND-1))
 
+#=====================================================================
+#--------------------- SET-UP VARIABLES  -----------------------------
+#=====================================================================
 
 echo matching_dwi=$matching_dwi
 echo participant_label=$participant_label
@@ -377,6 +382,9 @@ then
    echo "atlas config file $execpath/cfg/$atlas does not exist!"
    exit 1
 fi
+#=====================================================================
+#--------------------- BEGIN STAGE:  participant  --------------------
+#=====================================================================
 
 if [ "$analysis_level" = "participant" ]
 then
@@ -573,9 +581,17 @@ echo "--- Running processEddyNoTopUp ---"
    else
 echo "--- Skipping processEddyNoTopUp ---"
   fi
-  
    eddy=eddy
+
+  #at this stage, can do non-linear distortion correction (fieldmap-free), by registration to T1
+  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy_dc/dwi.nii.gz ]
+  then
+   echo "--- Running processDistortCorrect ---"
+   echo $execpath/bin/processDistortCorrect uncorrected_denoise_unring_eddy $subj_sess_prefix
+   $execpath/bin/processDistortCorrect uncorrected_denoise_unring_eddy $subj_sess_prefix
  else
+   echo "--- Skipping processDistortCorrect ---"
+   fi
 
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
   then 
@@ -733,7 +749,15 @@ done #loop over subj
 
 popd
 
-#end participant
+#=====================================================================
+#---------------------- END STAGE:  participant  ---------------------
+#=====================================================================
+
+
+#=====================================================================
+#---------------------- BEGIN STAGE:  group ---- ---------------------
+#=====================================================================
+
 elif [ "$analysis_level" = "group" ]
  then
 
@@ -803,6 +827,15 @@ elif [ "$analysis_level" = "group" ]
     # color rgb??
     # DWI overlaid with atlas labels??
 
+#=====================================================================
+#---------------------- END STAGE:  group ----------------------------
+#=====================================================================
+
+
+#=====================================================================
+#--------------------- BEGIN STAGE:  participant2  -------------------
+#=====================================================================
+
  elif [ "$analysis_level" = "participant2" ]
  then
 
@@ -868,11 +901,16 @@ elif [ "$analysis_level" = "group" ]
 
    popd
 
+#=====================================================================
+#------------------- END STAGE:  participant2 ------------------------
+#=====================================================================
+
+
+
  else    
   echo "unknown analysis level: $analysis_level"
   
-
-  exit 0
+  exit 1
 fi
 
 
