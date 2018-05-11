@@ -44,6 +44,8 @@ grad_coeff_file=
 scratch_dir=
 noregT1=0
 
+resample_res=
+
 #default:
 atlas=dosenbach
 
@@ -62,6 +64,7 @@ then
  echo "          [--reg_init_participant PARTICIPANT_LABEL]"
  echo "          [--grad_coeff_file GRAD_COEFF_FILE]"
  echo "          [-w WORK_DIR]  (scratch directory)"
+ echo "          [--resample_res ISOTROPIC_RES_IN_MM]  (default uses native resolution)"
  echo ""
  echo "          [--no-regT1]"
  echo "          [--no-topup]"
@@ -204,6 +207,21 @@ while :; do
             ;;
           --grad_coeff_file=)         # handle the case of an empty --participant=
          die 'error: "--grad_coeff_file" requires a non-empty option argument.'
+          ;;
+
+      --resample_res )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                resample_res=$2
+                  shift
+	      else
+              die 'error: "--resample_res" requires a non-empty option argument.'
+            fi
+              ;;
+     --resample_res=?*)
+          resample_res=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --resample_res=)         # handle the case of an empty --participant=
+         die 'error: "--resample_res" requires a non-empty option argument.'
           ;;
 
 
@@ -542,8 +560,9 @@ echo "--- Running importDWI ---"
 echo Found $Ndwi matching dwi, using all: 
  eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}
 
- echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix"
- $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix
+ #resample_res is the optional resampling resolution, empty if keep native
+ echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix $resample_res"
+ $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix $resample_res 
 else
 
 echo "--- Skipping importDWI ---"
