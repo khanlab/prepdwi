@@ -349,6 +349,20 @@ derivatives=$out_folder #bids derivatives
 mkdir -p $work_folder $derivatives
 derivatives=`realpath $derivatives`
 
+#just in case participants.tsv does not exist:
+if [ ! -e $participants ]
+then
+    #participants tsv not required by bids, so if it doesn't exist, create one for temporary use
+    participants=$work_folder/participants.tsv
+    echo participant_id > $participants
+    participants=`realpath $participants`
+    pushd $in_bids
+    ls -d sub-* >> $participants
+    popd 
+fi
+
+
+
 if [ -n "$participant_label" ]
 then
 subjlist=`echo $participant_label | sed  's/,/\ /g'` 
