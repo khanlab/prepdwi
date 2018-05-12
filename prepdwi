@@ -464,8 +464,13 @@ do
 
         subj_sess_dir=${subjfolder%/dwi}
         subj_sess_dir=${subj_sess_dir##$in_bids/}
-        sess=${subj_sess_dir##*/}
-        subj_sess_prefix=${subj}_${sess}
+        if echo $subj_sess_dir | grep -q '/'
+        then
+            sess=${subj_sess_dir##*/}
+            subj_sess_prefix=${subj}_${sess}
+        else
+            subj_sess_prefix=${subj}
+        fi
         echo subjfolder $subjfolder
         echo subj_sess_dir $subj_sess_dir
         echo sess $sess
@@ -796,8 +801,19 @@ elif [ "$analysis_level" = "group" ]
     do
 
         subj_sess_dir=${subjfolder%/dwi}
-        sess=${subj_sess_dir##*/}
-        subj_sess_prefix=${subj}_${sess}
+        subj_sess_dir=${subj_sess_dir##$in_bids/}
+        if echo $subj_sess_dir | grep -q '/'
+        then
+            sess=${subj_sess_dir##*/}
+            subj_sess_prefix=${subj}_${sess}
+        else
+            subj_sess_prefix=${subj}
+        fi
+        echo subjfolder $subjfolder
+        echo subj_sess_dir $subj_sess_dir
+        echo sess $sess
+        echo subj_sess_prefix $subj_sess_prefix
+
 
        
     pushd $work_folder
@@ -900,8 +916,18 @@ elif [ "$analysis_level" = "group" ]
     do
 
         subj_sess_dir=${subjfolder%/dwi}
-        sess=${subj_sess_dir##*/}
-        subj_sess_prefix=${subj}_${sess}
+        subj_sess_dir=${subj_sess_dir##$in_bids/}
+        if echo $subj_sess_dir | grep -q '/'
+        then
+            sess=${subj_sess_dir##*/}
+            subj_sess_prefix=${subj}_${sess}
+        else
+            subj_sess_prefix=${subj}
+        fi
+        echo subjfolder $subjfolder
+        echo subj_sess_dir $subj_sess_dir
+        echo sess $sess
+        echo subj_sess_prefix $subj_sess_prefix
 
 
      #check if bedpost results exist
