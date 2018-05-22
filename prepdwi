@@ -565,9 +565,8 @@ echo "--- Running importDWI ---"
 echo Found $Ndwi matching dwi, using all: 
  eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}
 
- #resample_res is the optional resampling resolution, empty if keep native
- echo "$execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix $resample_res"
- $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix $resample_res 
+ echo $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix 
+ $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix 
 else
 
 echo "--- Skipping importDWI ---"
@@ -594,18 +593,19 @@ echo "--- Running processUnring ---"
  fi
 
 
+
  if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
  then
- 
+ # no topup :
+   eddy=eddy
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
   then
-echo "--- Running processEddyNoTopUp ---"
-   echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
-   $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
+    echo "--- Running processEddyNoTopUp ---"
+    echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
+    $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
    else
-echo "--- Skipping processEddyNoTopUp ---"
+     echo "--- Skipping processEddyNoTopUp ---"
   fi
-   eddy=eddy
 
   #at this stage, can do non-linear distortion correction (fieldmap-free), by registration to T1
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy_dc/dwi.nii.gz ]
@@ -617,25 +617,28 @@ echo "--- Skipping processEddyNoTopUp ---"
    echo "--- Skipping processDistortCorrect ---"
    fi
 
+  else
+#run top-up
+  eddy=topup_eddy
+
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
   then 
-echo "--- Running processTopUp ---"
+    echo "--- Running processTopUp ---"
     echo $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
     $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
-else
-echo "--- Skipping processTopUp ---"
+  else
+    echo "--- Skipping processTopUp ---"
   fi
 
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
   then
-echo "--- Running processEddy ---"
+    echo "--- Running processEddy ---"
     echo $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
     $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
-
     else
         echo "--- Skipping processEddy ---"
   fi
-  eddy=topup_eddy
+
  fi
 
  if [ "$noregT1" = "0" ]
@@ -644,8 +647,8 @@ echo "--- Running processEddy ---"
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
   then
 echo "--- Running processRegT1 ---"
-  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix
-  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix
+  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix $resample_res
+  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix $resample_res
 else
     echo "--- Skipping processRegT1 ---"
   fi
@@ -669,7 +672,8 @@ echo "--- Running processGradUnwarp ---"
   else 
 echo "--- Skipping processGradUnwarp ---"
   fi
-    else
+
+    else #gradcorr withtout regT1
 
 
    if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_gradCorr/dwi.nii.gz ]
@@ -686,7 +690,7 @@ echo "--- Skipping processGradUnwarp ---"
     fi
 
 
-  fi
+fi
 
 
   #else #if preproc dwi exists
@@ -797,7 +801,7 @@ elif [ "$analysis_level" = "group" ]
         subj=`fixsubj $subj`
  
     #loop over sub- and sub-/ses-
-    for subjfolder in `ls $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
+    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
     do
 
         subj_sess_dir=${subjfolder%/dwi}
@@ -912,7 +916,7 @@ elif [ "$analysis_level" = "group" ]
       subj=`fixsubj $subj`
 
       #loop over sub- and sub-/ses-
-    for subjfolder in `ls $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
+    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi`
     do
 
         subj_sess_dir=${subjfolder%/dwi}

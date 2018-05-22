@@ -8,7 +8,7 @@ if [ "$#" -lt 1 ]
 then
  echo " writes output to dwi/<input>_regT1"
  echo ""
- echo "Command-line Usage: $0 <in_dwi_name>  <subjid>"
+ echo "Command-line Usage: $0 <in_dwi_name>  <subjid> <optional resample resolution>"
  exit 0
 fi
 
@@ -19,17 +19,14 @@ out_name=${in_dwi}_regT1
 shift 1
 
 
+subj=$1
 
-if [ -f $1 ]
+resample_res=
+if [ "$#" -gt 1 ]
 then
- subjids=`cat $1`
-else
- subjids=$1
+    resample_res=$2
 fi
 
-
-for subj in $subjids
-do
 
 
 
@@ -77,8 +74,13 @@ reg_aladin -rigOnly -flo $b0 -ref $t1 -res $epireg_work/b0_to_t1_aladin.nii.gz -
 echo c3d_affine_tool $epireg_work/b0_to_t1_aladin.xfm  -ref $t1 -src $b0 -ras2fsl -o $xfm_b0_t1
 c3d_affine_tool $epireg_work/b0_to_t1_aladin.xfm  -ref $t1 -src $b0 -ras2fsl -o $xfm_b0_t1
 
+if [ -n "$resample_res" ]
+then
+    diff_res=$resample_res 
+else
+    diff_res=`fslval $b0 pixdim1`
+fi
 
-diff_res=`fslval $b0 pixdim1`
 b0_t1_ref=$epireg_work/b0_t1space_diffres.nii.gz
 
 #generate reference at dwi resolution in t1 space
@@ -119,4 +121,3 @@ echo dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
 dtifit -k $dwi_vol -o $out_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
 
 
-done
