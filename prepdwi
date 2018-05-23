@@ -941,8 +941,8 @@ elif [ "$analysis_level" = "group" ]
         continue
       fi
 
-     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj_sess_prefix/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
-     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/$subj_sess_prefix/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
+     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
+     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
 
  done #subjsess
   done #subj
