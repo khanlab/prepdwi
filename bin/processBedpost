@@ -35,9 +35,14 @@ subj_dir=$output_dir/$subj
 dwi_dir=$subj_dir/dwi/${in_dwi}
 out_dir=$subj_dir/dwi/${out_name}
 
-
-bedpost_data=$dwi_dir/bedpost
-mkdir -p $bedpost_data
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
+    then
+        bedpost_data=$scratch_dir/bedpost
+    else
+        bedpost_data=$dwi_dir/bedpost
+    fi
+    
+    mkdir -p $bedpost_data
 
 dwi_bvec=$dwi_dir/dwi.bvec
 dwi_bval=$dwi_dir/dwi.bval
@@ -71,7 +76,16 @@ fslmaths $nodif_brain_mask -bin $nodif_brain_mask
 
 bedpostx-parallel  $bedpost_data/ -c -P $n_cpus $gradopt
 
+ #remove unneeded diff_slice files:
+ rm -rf $bedpost_data.bedpostX/diff_slices
 
+
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
+    then
+        final_bedpost_data=$dwi_dir/bedpost
+        mv -v  $bedpost_data $final_bedpost_data
+        mv -v $bedpost_data.bedpostX $final_bedpost_data.bedpostX
+    fi
 
 done
 

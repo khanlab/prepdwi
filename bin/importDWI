@@ -5,7 +5,7 @@
 
 if [ "$#" -lt 4 ]
 then
- echo "Command-line Usage: $0 <out folder name - e.g. multiband or singleband> <number of dwi acquisitions> <input DWI blip 1 > <input DWI blip 2 > ..   <subjid> <optional resample resolution>"
+ echo "Command-line Usage: $0 <out folder name - e.g. multiband or singleband> <number of dwi acquisitions> <input DWI blip 1 > <input DWI blip 2 > ..   <subjid>"
  exit 0
 fi
 
@@ -38,13 +38,6 @@ done
 
 subj=$1
 
-resample_res=
-if [ "$#" -gt 1 ]
-then
-    resample_res=$2
-fi
-
-
 
 
 
@@ -75,13 +68,6 @@ do
 cp -v ${in_json[$i]} $uncorr_dir/dwi_$i.json
 cp -v ${in_bvec[$i]} $uncorr_dir/dwi_$i.bvec
 cp -v ${in_bval[$i]} $uncorr_dir/dwi_$i.bval
-
-if [ -n "$resample_res" ]
-then
- echo "Resampling to isotropic resolution $resample_res"
- echo mri_convert $uncorr_dir/dwi_$i.nii.gz $uncorr_dir/dwi_$i.nii.gz -vs $resample_res $resample_res $resample_res
- mri_convert $uncorr_dir/dwi_$i.nii.gz $uncorr_dir/dwi_$i.nii.gz -vs $resample_res $resample_res $resample_res
-fi
 
 
 done
