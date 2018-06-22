@@ -2,7 +2,7 @@
 
 if [ "$#" -lt 4 ]
 then
- echo "Usage $0 <path to image> <path to mask> <out_name> <subjid/list>"
+ echo "Usage $0 <qc_dir> <path to image> <path to mask> <out_name> <subjid/list>"
  exit 0
 fi
 
@@ -12,8 +12,9 @@ fi
 	#put it in quickchecks folder, named according to processing
 	#could then be a command for creating report html files
 
-qc_dir=QC
+qc_dir=$1
 mkdir -p $qc_dir
+shift 1
 
 img_path=$1
 mask_path=$2

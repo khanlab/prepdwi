@@ -2,7 +2,7 @@
 
 if [ "$#" -lt 2 ]
 then
- echo "Usage $0 <atlas_name> <subjid/list>"
+ echo "Usage $0 <qc_dir> <atlas_name> <subjid/list>"
  exit 0
 fi
 
@@ -16,8 +16,9 @@ atlas_name=$1
 shift 1
 
 
-qc_dir=QC
+qc_dir=$1
 mkdir -p $qc_dir
+shift 1
 
 if [ -f $1 ]
 then

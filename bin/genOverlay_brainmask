@@ -2,7 +2,7 @@
 
 if [ "$#" -lt 1 ]
 then
- echo "Usage $0 <subjid/list>"
+ echo "Usage $0 <qc dir> <subjid/list>"
  exit 0
 fi
 
@@ -12,8 +12,9 @@ fi
 	#put it in quickchecks folder, named according to processing
 	#could then be a command for creating report html files
 
-qc_dir=QC
+qc_dir=$1
 mkdir -p $qc_dir
+shift 1
 
 if [ -f $1 ]
 then
