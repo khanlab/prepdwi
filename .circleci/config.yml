@@ -17,7 +17,7 @@ jobs:
             apk add --update make wget
       - run:
           name: Building prepdwi docker container
-          command: docker build -t $(DOCKER_NAME) .
+          command: docker build -t $DOCKER_NAME .
       - run:
           name: Running single shell dwi test
           command: |
@@ -26,7 +26,7 @@ jobs:
               #copy test data to a dummy container
               docker create -v /data --name testdata alpine:3.4 /bin/true
               docker cp dwi_singleshell testdata:/data
-              docker run --name testapp -it --volumes-from testdata $(DOCKER_NAME) /data /out participant --no-bedpost
+              docker run --name testapp -it --volumes-from testdata $DOCKER_NAME /data /out participant --no-bedpost
               #copy output data from dummy container
               docker cp testapp:/out dwi_singleshell_out
               ls *
