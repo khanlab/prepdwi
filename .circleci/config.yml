@@ -28,7 +28,7 @@ jobs:
               docker create -v /data --name testdata alpine:3.4 /bin/true
               docker cp dwi_singleshell testdata:/data
               export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
-              docker run --name testapp -it --volumes-from testdata $DOCKER_NAME /data /out participant --no-bedpost
+              docker run --name testapp -it --volumes-from testdata $DOCKER_NAME /data/dwi_singleshell /out participant --no-bedpost
               #copy output data from dummy container
               docker cp testapp:/out dwi_singleshell_out
               ls *
