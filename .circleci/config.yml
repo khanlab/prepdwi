@@ -16,7 +16,10 @@ jobs:
             apk add --update make wget
       - run:
           name: Building prepdwi docker container
-          command: docker build -t $DOCKER_NAME .
+          command: |
+              export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+              echo $DOCKER_NAME
+              docker build -t $ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM .
       - run:
           name: Running single shell dwi test
           command: |
