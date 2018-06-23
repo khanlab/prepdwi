@@ -9,13 +9,21 @@ jobs:
       - run:
           name: Install dependencies 
           command: |
-            apk add --update make wget tree
+            apk add --update make wget
       - run:
           name: Building prepdwi docker container
           command: |
-            ls *
-            tree
-            make docker_build
+			TAG=0.1.$CIRCLE_BUILD_NUM
+            make docker_build VERSION=$TAG
       - run:
-          name: Running tests
-          command: echo make test_singleshell
+          name: Running single shell dwi test
+          command: make test_singleshell
+
+	  - deploy:
+		  name: Pushing build to docker hub
+		  command: |
+			TAG=0.1.$CIRCLE_BUILD_NUM
+			ORG=khanlab
+			NAME=prepdwi
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push $ORG/$NAME:TAG

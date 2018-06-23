@@ -26,12 +26,26 @@ build:
 
 
 sandbox:
-	sudo singularity build --sandbox sandbox_$(SINGULARITY_NAME) Singularity.$(VERSION) | tee -a $(LOG_DIR)/sandbox_$(SINGULARITY_NAME).log
+	sudo singularity build --sandbox $(BUILD_DIR)/sandbox_$(SINGULARITY_NAME) Singularity.$(VERSION) | tee -a $(LOG_DIR)/sandbox_$(SINGULARITY_NAME).log
 	
 	
 docker_build: 
 	docker build -t $(DOCKER_NAME) --rm .
 
+
+clean_test:
+	rm -rf dwi_singleshell dwi_singleshell_out
+
+test_singleshell:
+	mkdir dwi_singleshell
+	wget -qO- https://www.dropbox.com/s/68oez1yhhnqp7z2/dwi_singleshell.tar | tar xv -C dwi_singleshell
+	docker run --rm -it -v $(PWD)/dwi_singleshell:/in -v $(PWD)/dwi_singleshell_out:/out $(DOCKER_NAME) /in /out participant --no-bedpost
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_preproc.nii.gz  
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_preproc.bvec
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_preproc.bval
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_FA.nii.gz
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_V1.nii.gz
+	test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_brainmask.nii.gz
 
 docker_tag_latest:
 	docker tag $(DOCKER_NAME) $(DOCKER_LATEST)
