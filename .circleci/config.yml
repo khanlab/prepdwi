@@ -7,6 +7,10 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: Install dependencies 
+          command: |
+            apk add --update make wget
+      - run:
           name: Building prepdwi docker container
           command: make docker_build
       - run:
