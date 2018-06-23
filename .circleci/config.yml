@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build1:
+  build:
     docker:
       - image: khanlab/neuroglia-dwi:v1.3.2
     steps:
