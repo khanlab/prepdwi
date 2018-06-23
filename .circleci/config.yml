@@ -20,7 +20,7 @@ jobs:
       - run:
           name: Running single shell dwi test
           command: |
-              DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+              export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
               mkdir dwi_singleshell
               wget -qO- https://www.dropbox.com/s/68oez1yhhnqp7z2/dwi_singleshell.tar | tar xv -C dwi_singleshell
               #copy test data to a dummy container
@@ -39,6 +39,6 @@ jobs:
       - run:
           name: Pushing build to docker hub
           command: |
-            DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+            export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker push $DOCKER_NAME
