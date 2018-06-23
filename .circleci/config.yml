@@ -13,7 +13,7 @@ jobs:
       - run:
           name: Building prepdwi docker container
           command: |
-          TAG=0.1.$CIRCLE_BUILD_NUM
+            TAG=0.1.$CIRCLE_BUILD_NUM
             make docker_build VERSION=$TAG
       - run:
           name: Running single shell dwi test
