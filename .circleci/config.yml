@@ -16,12 +16,11 @@ jobs:
           command: |
             apk add --update make wget
       - run:
-          name: Building prepdwi docker container
-          command: |
-	  docker build -t $(DOCKER_NAME) .
+        name: Building prepdwi docker container
+        command: docker build -t $(DOCKER_NAME) .
       - run:
-          name: Running single shell dwi test
-          command: |
+        name: Running single shell dwi test
+        command: |
               mkdir dwi_singleshell
               wget -qO- https://www.dropbox.com/s/68oez1yhhnqp7z2/dwi_singleshell.tar | tar xv -C dwi_singleshell
               #copy test data to a dummy container
