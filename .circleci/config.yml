@@ -1,13 +1,13 @@
 version: 2
 jobs:
-  build:
+  build1:
     docker:
       - image: khanlab/neuroglia-dwi:v1.3.2
     steps:
       - checkout
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: Building prepdwi docker container
+          command: make docker_build
       - run:
-          name: Print the Current Time
-          command: date
+          name: Running tests
+          command: echo make test_singleshell
