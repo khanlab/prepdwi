@@ -18,7 +18,6 @@ jobs:
       - run:
           name: Running single shell dwi test
           command: make test_singleshell
-
 	  - deploy:
 		  name: Pushing build to docker hub
 		  command: |
