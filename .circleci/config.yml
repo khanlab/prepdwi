@@ -4,10 +4,10 @@ jobs:
     docker:
       - image: docker:17.05.0-ce-git
     environment:
-        ORG=khanlab
-        NAME=prepdwi
-        VERSION = 0.1.$CIRCLE_BUILD_NUM
-        DOCKER_NAME=$(ORG)/$(NAME):$(VERSION)
+      ORG: khanlab
+      NAME: prepdwi
+      VERSION: 0.1.$CIRCLE_BUILD_NUM
+      DOCKER_NAME: $ORG/$NAME:$VERSION
     steps:
       - checkout
       - setup_remote_docker
@@ -16,11 +16,11 @@ jobs:
           command: |
             apk add --update make wget
       - run:
-        name: Building prepdwi docker container
-        command: docker build -t $(DOCKER_NAME) .
+          name: Building prepdwi docker container
+          command: docker build -t $(DOCKER_NAME) .
       - run:
-        name: Running single shell dwi test
-        command: |
+          name: Running single shell dwi test
+          command: |
               mkdir dwi_singleshell
               wget -qO- https://www.dropbox.com/s/68oez1yhhnqp7z2/dwi_singleshell.tar | tar xv -C dwi_singleshell
               #copy test data to a dummy container
@@ -37,7 +37,7 @@ jobs:
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_V1.nii.gz
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_brainmask.nii.gz
       - run:
-        name: Pushing build to docker hub
-        command: |
-           docker login -u $DOCKER_USER -p $DOCKER_PASS
-           docker push $DOCKER_NAME
+          name: Pushing build to docker hub
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push $DOCKER_NAME
