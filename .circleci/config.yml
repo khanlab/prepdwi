@@ -9,10 +9,13 @@ jobs:
       - run:
           name: Install dependencies 
           command: |
-            apk add --update make wget
+            apk add --update make wget tree
       - run:
           name: Building prepdwi docker container
-          command: make docker_build
+          command: |
+            ls *
+            tree
+            make docker_build
       - run:
           name: Running tests
           command: echo make test_singleshell
