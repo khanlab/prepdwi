@@ -2,9 +2,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: khanlab/neuroglia-dwi:v1.3.2
+      - image: docker:17.05.0-ce-git
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Building prepdwi docker container
           command: make docker_build
