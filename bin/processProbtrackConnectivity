@@ -152,6 +152,68 @@ do
    done
 
 
+##########################################################################################################
+#This section reads all the FA files in the prepdwi directory and generates matrices for mean and max FA value for each connectivity.
+
+   echo "Generating FA matrices"
+   mkdir -p temp
+
+   subject_dir=${subj%_*} #stripping the subject ID
+   session_dir=${subj#*_} #stripping the session
+
+   for FAs in $(ls ../prepdwi/$subject_dir/$session_dir/dwi/*FA.nii.gz) #Reads through all the FA images.
+   do
+
+   	front=${FAs##*-}  #stripping off the front part to get what type of FA image
+   	FA=${front%%.*} #stripping off the file extension
+
+   	#labellist=""
+   	for line in `cat $atlas_label_csv`
+  	do
+       		label=${line%,*}
+      		index=${line##*,}
+      
+       		index_pad=`printf  %03d $index`
+
+		connect_nifty=$index_pad.$label
+		mkdir -p temp/$connect_nifty  #Creadting folders for each connectivity
+
+		for nifties in $(ls $out_track_dir/$connect_nifty/seeds_to*.gz)  #Going through all the nifty files generated for each connectivity
+		do
+			name=${nifties##*/}
+			fslmaths $nifties -thr 500 temp/$connect_nifty/$name.nii.gz  #Threshoding with 500, this should be not hardcoded, Should edit later
+			fslmaths $FAs -mas temp/$connect_nifty/$name.nii.gz temp/$connect_nifty/$name.nii.gz  #Masking with the FA image
+			mean_FA=$(fslstats temp/$connect_nifty/$name.nii.gz -M)  #Gets the non zero FA mean 
+			max_FA=$(fslstats temp/$connect_nifty/$name.nii.gz -R)   #Gets the maximum FA value and the min
+			Max_FA=$(echo $max_FA | awk '{print $2}') #Gets the max value (second line is the MAx)
+			octave --eval "dlmwrite('temp/$connect_nifty/mean_${FA}_to_all_targets.csv',$mean_FA,'-append', 'delimiter', '\t')" #Saving mean FA to a CSV file
+			octave --eval "dlmwrite('temp/$connect_nifty/max_${FA}_to_all_targets.csv',$Max_FA,'-append', 'delimiter', '\t')" #Saving max FA to a CSV file
+		
+		done
+
+	#Rotating the mean csv file and adding it to the matrix
+	octave --eval "dlmwrite('temp/$connect_nifty/mean_${FA}_to_all_targets.csv', rot90(importdata('temp/$connect_nifty/mean_${FA}_to_all_targets.csv')),'delimiter', ',')"
+	sleep .1	
+	cat temp/$connect_nifty/mean_${FA}_to_all_targets.csv >> ../prepdwi/$subject_dir/$session_dir/dwi/mean_${FA}_to_all_targets.csv
+
+	
+	#Rotating the max csv file and adding it to the matrix
+	octave --eval "dlmwrite('temp/$connect_nifty/max_${FA}_to_all_targets.csv', rot90(importdata('temp/$connect_nifty/max_${FA}_to_all_targets.csv')),'delimiter', ',')"
+	sleep .1
+	cat temp/$connect_nifty/max_${FA}_to_all_targets.csv >> ../prepdwi/$subject_dir/$session_dir/dwi/max_${FA}_to_all_targets.csv
+	
+    	done
+	
+	echo "FA matrix generations is complete"
+   done
+
+rm temp
+
+# End of the FA matrix section
+#######################################################################################################################
+
+
+
     if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
     then
         pushd $scratch_dir/$subj
