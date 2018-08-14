@@ -38,7 +38,7 @@ jobs:
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_FA.nii.gz
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_V1.nii.gz
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_brainmask.nii.gz
-              test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_bval-1000_avgDWI.nii.gz
+              #              test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_bval-1000_avgDWI.nii.gz
       - run:
           name: Pushing build to docker hub
           command: |
