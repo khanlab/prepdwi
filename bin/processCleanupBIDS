@@ -130,6 +130,15 @@ do
 
 done
 
+#mean diff-weighted
+for im in $dwi_dir/avgDWI_bval-*.nii.gz
+do
+    inB=${im%%.nii*}
+    inB=${inB##*avgDWI_bval-}
+    cp -v $dwi_dir $out_dwi_dir/${subj_sess_prefix}_dwi${flags}bval-${inB}_avgDWI.nii.gz
+
+done
+
 
 fi
 

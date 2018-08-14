@@ -733,6 +733,18 @@ fi
        is_multishell=0
   fi
 
+
+  #generate mean DWI for each shell
+for shell in `cat $shells`
+do
+    
+  echo octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi',$shell,'$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/avgDWI_bval-${shell}.nii.gz')"
+  octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi',$shell,'$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/avgDWI_bval-${shell}.nii.gz')"
+
+done
+
+
+
   #continue running pipelines
   if [ "$bedpost" = 1 ]
   then 
