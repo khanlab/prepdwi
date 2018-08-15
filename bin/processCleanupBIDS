@@ -108,6 +108,17 @@ do
 
 done
 
+
+#mean diff-weighted
+for im in $dwi_dir/avgDWI_bval-*.nii.gz
+do
+    inB=${im%%.nii*}
+    inB=${inB##*avgDWI_bval-}
+    cp -v $dwi_dir $out_dwi_dir/${subj_sess_prefix}_dwi${flags}bval-${inB}_avgDWI.nii.gz
+
+done
+
+
 in_bedpost=$dwi_dir/bedpost.bedpostX
 out_bedpost_dir=$out_bedpost_root/${subj_sess_prefix}
 if [ -e $in_bedpost -a ! -e $out_bedpost_dir ]
@@ -127,15 +138,6 @@ do
  then
  cp -v $in_dke/$map.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_$map.nii.gz
  fi
-
-done
-
-#mean diff-weighted
-for im in $dwi_dir/avgDWI_bval-*.nii.gz
-do
-    inB=${im%%.nii*}
-    inB=${inB##*avgDWI_bval-}
-    cp -v $dwi_dir $out_dwi_dir/${subj_sess_prefix}_dwi${flags}bval-${inB}_avgDWI.nii.gz
 
 done
 
