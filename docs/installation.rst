@@ -41,13 +41,13 @@ For our example create a directory to save the output inside the project directo
 
 At the command line type::
 
-    singularity run home/singularity/prepdwi_7g home/project/bids home/project/derrivatives participant 
+    singularity run home/singularity/prepdwi_version.img home/project/bids home/project/derrivatives participant 
 
 Or, if you have access to Khanlab Graham server and have `neuroglia helpers <https://github.com/khanlab/neuroglia-helpers>`_. installed you can submit it as a job.
 
 .. code-block:: bash
 
-    bidsBatch prepdwi_0.0.7g <bids_dir> <output_dir> participant
+    bidsBatch prepdwi_version <bids_dir> <output_dir> participant
 
 This will run the participant level analysis for all the subjects in the bids folder and will save the resultst to the derrivatives folder. This code is running the `FSL BEDPOSTX <https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FDT/UserGuide#BEDPOSTX>`_. which takes a long time and we highly recommend using highspeed computer server to run this code. (Typical time is 24 hours in Sharcnet)
 Once the process is completed, you will see a "work" folder and a "prepdwi" folder inside the "derrivatives" directory. To learn what to expect inside thses folders, read (link to the cookbook)
@@ -61,13 +61,13 @@ After running the participant level analysis, you can run a group level analysis
 
 At the command line type::
 
-    singularity run home/singularity/prepdwi_7g home/project/bids home/project/derrivatives group 
+    singularity run home/singularity/prepdwi_version.img home/project/bids home/project/derrivatives group 
 
 Or, for Khanlab members
 
 .. code-block:: bash
 
-	bidsBatch prepdwi_0.0.7g <bids_dir> <output_dir> group
+	bidsBatch prepdwi_version <bids_dir> <output_dir> group
 
 IMPORTANT: Makesure that the ourput directory is the same as the one for "participant" level.
 
@@ -80,13 +80,13 @@ If the participant1 level is completed you can run participant2 level analysis o
 
 At the command line type::
 
-    singularity run home/singularity/prepdwi_7g home/project/bids home/project/derrivatives participant2 
+    singularity run home/singularity/prepdwi_version.img home/project/bids home/project/derrivatives participant2 
 
 Or, for Khanlab members
 
 .. code-block:: bash
 
-	bidsBatch prepdwi_0.0.7g <bids_dir> <output_dir> participant2
+	bidsBatch prepdwi_version <bids_dir> <output_dir> participant2
 
 IMPORTANT: Makesure that the ourput directory is the same as the one for "participant" level.
 
