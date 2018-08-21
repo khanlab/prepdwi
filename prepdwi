@@ -601,7 +601,7 @@ echo "--- Running processUnring ---"
  if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
  then
  # no topup :
-   eddy=eddy
+   eddy=eddy_dc
   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
   then
     echo "--- Running processEddyNoTopUp ---"
@@ -703,8 +703,12 @@ fi
  if [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy${final_suffix}/dwi.nii.gz ]
  then
 	 eddy=eddy
- else
+ elif [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup_eddy${final_suffix}/dwi.nii.gz ]
+ then
 	 eddy=topup_eddy
+ elif [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy_dc${final_suffix}/dwi.nii.gz ]
+ then
+    eddy=eddy_dc
  fi
 	
 
