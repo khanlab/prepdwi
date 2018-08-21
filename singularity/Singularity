@@ -1,17 +1,15 @@
-Bootstrap: shub
-From: akhanf/vasst-dev:v0.0.3a
+Bootstrap: docker
+From: khanlab/neuroglia-dwi:v1.3.2
 
 
 %labels
 Maintainer "Ali Khan"
 
-
-
 #########
 %setup
 #########
-mkdir -p $SINGULARITY_ROOTFS/src
-cp -Rv . $SINGULARITY_ROOTFS/src
+mkdir -p $SINGULARITY_ROOTFS/opt/prepdwi
+cp -Rv . $SINGULARITY_ROOTFS/opt/prepdwi
 
 
 #########
@@ -19,5 +17,17 @@ cp -Rv . $SINGULARITY_ROOTFS/src
 #########
 
 
+echo addpath\(genpath\(\'/opt/prepdwi/octave\'\)\)\; >> /etc/octave.conf 
+apt-get install -y bc
+
+#########
+%environment
+#########
+
+export PATH=/opt/prepdwi/bin:$PATH
+
+#########
 %runscript
-exec /src/prepdwi $@
+#########
+
+exec /opt/prepdwi/prepdwi $@
