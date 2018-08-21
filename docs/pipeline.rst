@@ -66,13 +66,13 @@ To use the --reg_init_participant flag, you have to pick a subject which has a s
 
 .. code-block:: bash
 
-    singularity run home/singularity/prepdwi_7g home/project/bids home/project/derrivatives participant --reg_init_participant <subj-ID> 
+    singularity run home/singularity/prepdwi_version.img home/project/bids home/project/derrivatives participant --reg_init_participant <subj-ID> 
 
 Or, for Khanlab members
 
 .. code-block:: bash
 
-    bidsBatch prepdwi_0.0.7g <bids_dir> <output_dir> participant --reg_init_participant <subj-ID>
+    bidsBatch prepdwi_version <bids_dir> <output_dir> participant --reg_init_participant <subj-ID>
 
 
 Here the subject ID should be as same as in the work folder. Not as in the bids folder. If there are multimple session for a subject, the session name will be added as a suffix to the subject ID in the work folder. Therefore you have to use the subject ID as it is in the work folder.
