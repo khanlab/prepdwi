@@ -47,8 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'PREPDWI'
-copyright = '2018, Dr. Ali Khan'
-author = 'Dr. Ali Khan Dimuthu and hemachandra'
+copyright = '2018, Ali Khan'
+author = 'Ali Khan and  Dimuthu Hemachandra'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
