@@ -2,7 +2,6 @@
 Prepdwi Pipeline
 ========
 
-Prepdwi has three level of analysis named as participant, group and participant2.
 
 usage::
 
@@ -34,8 +33,16 @@ usage::
                   [--atlas_label_csv LABEL_INDEX_CSV    
 
 
-Participant Level
-----------------
+
+                  
+Overview
+----------
+
+Prepdwi has three level of analysis: participant, group and participant2. The participant level performs all the pre-processing, the group level generates visual reports for inspection of quality, and the participant2 level performs tractography.
+
+
+Stage: participant
+-------------------
 
 At the participant level the T1 data and DWI data are being pre-processed using the following steps.
 
@@ -57,12 +64,17 @@ BEDPOST
 
 
 
-Group Level
+Stage: group
 -------------------
 
-At the Group Level analysis, prepdwi reads all the processed data in participant level and creates a qulaity report for each subject showing how good the registrations are. You can't run group level for a single subject. Once the group level analysis is completed, you will see a new folder inside the "derrivatives" directory called "reports". There you will see a list of html files for each subject which shows the qulaity of the registration at each process. The failed registrations can be identified if the red contour plots are not overlapping with the template image. For the registration failed cases, you can re-run prepdwi participant level using --reg_init_participant flag.
+At the Group Level analysis, prepdwi reads all the processed data in participant level and creates a qulaity report for each subject showing how good the registrations are. You can't run group level for a single subject. Once the group level analysis is completed, you will see a new folder inside the "derrivatives" directory called "reports". There you will see a list of html files for each subject which shows the qulaity of the registration at each process. The failed registrations can be identified if the red contour plots are not overlapping with the template image. 
 
-To use the --reg_init_participant flag, you have to pick a subject which has a successful good registration. Then Prepwi will use that as the initial image to register the images of the subjects you want.
+Correcting failed linear registration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For the registration failed cases, you can re-run prepdwi participant level using --reg_init_participant flag.
+
+To use the --reg_init_participant flag, you have to pick a subject which has a successful registration. Then Prepdwi will use the transform from that image to initialize the registration of other subjects. This corrects the failed linear registration in 99% of the cases. 
 
 .. code-block:: bash
 
@@ -77,10 +89,10 @@ Or, for Khanlab members
 
 Here the subject ID should be as same as in the work folder. Not as in the bids folder. If there are multimple session for a subject, the session name will be added as a suffix to the subject ID in the work folder. Therefore you have to use the subject ID as it is in the work folder.
 
-Participant2 Level
+Stage: participant2 
 --------------------
 
-Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either canned atlases with the --atlas option, where predefined atlases are defined in the cfg folder;  or can specify a new atlas with the --atlas_* options
+Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either pre-configured atlases with the --atlas option, where predefined atlases are defined in the cfg folder in the git repository;  or can specify a new atlas with the --atlas_* options
 
 
 .. index::
