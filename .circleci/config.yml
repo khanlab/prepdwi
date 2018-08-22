@@ -3,9 +3,8 @@ jobs:
   build:
     docker:
       - image: docker:17.05.0-ce-git
+    context: org-global
     environment:
-      ORG: khanlab
-      NAME: prepdwi
       VERSION: 0.1
     steps:
       - checkout
@@ -17,7 +16,7 @@ jobs:
       - run:
           name: Building prepdwi docker container
           command: |
-              export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+              export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$VERSION.$CIRCLE_BUILD_NUM
               docker build -t $DOCKER_NAME .
       - run:
           name: Running single shell dwi test
@@ -27,7 +26,7 @@ jobs:
               #copy test data to a dummy container
               docker create -v /data --name testdata alpine:3.4 /bin/true
               docker cp dwi_singleshell testdata:/data
-              export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+              export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$VERSION.$CIRCLE_BUILD_NUM
               docker run --name testapp -it --volumes-from testdata $DOCKER_NAME /data/dwi_singleshell /out participant --no-bedpost
               #copy output data from dummy container
               docker cp testapp:/out dwi_singleshell_out
@@ -43,8 +42,8 @@ jobs:
           name: Pushing build to docker hub
           command: |
             docker login -u $DOCKER_USER -p $DOCKER_PASS
-            export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
-            export DOCKER_LATEST=$ORG/$NAME:latest
+            export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$VERSION.$CIRCLE_BUILD_NUM
+            export DOCKER_LATEST=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
             docker tag $DOCKER_NAME $DOCKER_LATEST
             docker push $DOCKER_LATEST
             docker push $DOCKER_NAME
