@@ -44,4 +44,16 @@ jobs:
           command: |
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             export DOCKER_NAME=$ORG/$NAME:$VERSION.$CIRCLE_BUILD_NUM
+            export DOCKER_LATEST=$ORG/$NAME:latest
+            docker tag $DOCKER_LATEST $DOCKER_NAME
+            docker push $DOCKER_LATEST
             docker push $DOCKER_NAME
+      - run:
+          name: Pushing latest to singularity hub 
+          command: |
+            git config --global user.email $GH_EMAIL
+            git config --global user.name $GH_NAME
+            echo "" >> Singularity
+            git add Singularity
+            git commit -m "shub build latest [skip ci]"
+            git push 
