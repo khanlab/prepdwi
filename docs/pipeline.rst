@@ -1,7 +1,8 @@
-========
+=================
 Prepdwi Pipeline
-========
+=================
 
+Prepdwi has three level of analysis named as participant, group and participant2.
 
 usage::
 
@@ -33,48 +34,81 @@ usage::
                   [--atlas_label_csv LABEL_INDEX_CSV    
 
 
+Flag description
+----------------
 
-                  
-Overview
-----------
+Participant level flags
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Prepdwi has three level of analysis: participant, group and participant2. The participant level performs all the pre-processing, the group level generates visual reports for inspection of quality, and the participant2 level performs tractography.
+=========================   =====================         ============================================================================
+Flag                        Options                       Description
+=========================   =====================         ============================================================================
+--participant_label         subject ID                    To run prepdwi for one subject. 
+--matching_dwi              MATCHING_PATTERN                     
+--matching_T1w              MATCHING_STRING                     
+--reg_init_participant      subject ID                    Use this flag to re-run participant level for the subjects with failed registrartoins observed in the group level. Use a subject with good registration to initialize the registartion. The subject ID should match the ID as in the work folder. 
+--grad_coeff_file
+-w
+--no-regT1                                            
+--no-topup  
+-no-bedpost                                               Use this flag if you don't want to run FSL BEDPOST
+--no-dke
+--n_cpus NCPUS.                                           Number of cpus for bedpost. Default: 8
+=========================   =====================         ============================================================================
 
 
-Stage: participant
--------------------
+Participant2 level flags
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+=============================   =======================   ============================================================================
+Flag                            Options                   Description
+=============================   =======================   ============================================================================
+--nprobseeds                    N                         Number of seeds for probtrackx, default: 5000
+--atlas\ :sup:`1`               dosenbach                 Name of the atlas that you want to have the connectivity. default: dosenbach
+    \                           cort_striatum_midbrain    
+    \                           dosenbach  yeo17  
+    \                           yeo17_striatum  
+    \                           yeo7  
+    \                           yeo7_striatum                                           
+--atlas_space\ :sup:`2`         MNI152_1mm
+    \                           MNI152NLin2009cAsym     
+--atlas_label_nii\ :sup:`2`     NIFTI                     Nifty file with labeled ROIs
+--atlas_label_csv\ :sup:`2`     LABEL_INDEX_CSV           csv file with label indices 
+=============================   =======================   ============================================================================
+
+\ :sup:`1` flgas for available atlases, 
+\ :sup:`2` flags for user defined atlases
+
+
+Participant Level
+------------------
 
 At the participant level the T1 data and DWI data are being pre-processed using the following steps.
 
 Denoising and unringing
-^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 top-up
-^^^^
+^^^^^^^^
 
 Eddy Current Correction
-^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 T1w-T1w template (MNI152_1mm and MNI152NLin2009cAsym) registration
-^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 BEDPOST
-^^^^
+^^^^^^^^
 
 
 
-Stage: group
+Group Level
 -------------------
 
-At the Group Level analysis, prepdwi reads all the processed data in participant level and creates a qulaity report for each subject showing how good the registrations are. You can't run group level for a single subject. Once the group level analysis is completed, you will see a new folder inside the "derrivatives" directory called "reports". There you will see a list of html files for each subject which shows the qulaity of the registration at each process. The failed registrations can be identified if the red contour plots are not overlapping with the template image. 
+At the Group Level analysis, prepdwi reads all the processed data in participant level and creates a qulaity report for each subject showing how good the registrations are. You can't run group level for a single subject. Once the group level analysis is completed, you will see a new folder inside the "derrivatives" directory called "reports". There you will see a list of html files for each subject which shows the qulaity of the registration at each process. The failed registrations can be identified if the red contour plots are not overlapping with the template image. For the registration failed cases, you can re-run prepdwi participant level using --reg_init_participant flag.
 
-Correcting failed linear registration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-For the registration failed cases, you can re-run prepdwi participant level using --reg_init_participant flag.
-
-To use the --reg_init_participant flag, you have to pick a subject which has a successful registration. Then Prepdwi will use the transform from that image to initialize the registration of other subjects. This corrects the failed linear registration in 99% of the cases. 
+To use the --reg_init_participant flag, you have to pick a subject which has a successful good registration. Then Prepwi will use that as the initial image to register the images of the subjects you want.
 
 .. code-block:: bash
 
@@ -89,10 +123,10 @@ Or, for Khanlab members
 
 Here the subject ID should be as same as in the work folder. Not as in the bids folder. If there are multimple session for a subject, the session name will be added as a suffix to the subject ID in the work folder. Therefore you have to use the subject ID as it is in the work folder.
 
-Stage: participant2 
+Participant2 Level
 --------------------
 
-Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either pre-configured atlases with the --atlas option, where predefined atlases are defined in the cfg folder in the git repository;  or can specify a new atlas with the --atlas_* options
+Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either canned atlases with the --atlas option, where predefined atlases are defined in the cfg folder;  or can specify a new atlas with the --atlas_* options
 
 
 .. index::
