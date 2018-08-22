@@ -14,15 +14,6 @@ jobs:
           command: |
             apk add --update make wget
       - run:
-          name: Pushing latest to singularity hub test
-          command: |
-            git config --global user.email $GH_EMAIL
-            git config --global user.name $GH_NAME
-            echo "" >> Singularity
-            git add Singularity
-            git commit -m "shub build latest [skip ci]"
-            git push -q https://${GITHUB_TOKEN}@github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
-      - run:
           name: Building prepdwi docker container
           command: |
               export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$VERSION.$CIRCLE_BUILD_NUM
@@ -57,14 +48,14 @@ jobs:
             docker push $DOCKER_LATEST
             docker push $DOCKER_NAME
       - run:
-          name: Pushing latest to singularity hub 
+          name: Pushing latest to singularity hub test
           command: |
             git config --global user.email $GH_EMAIL
             git config --global user.name $GH_NAME
             echo "" >> Singularity
             git add Singularity
             git commit -m "shub build latest [skip ci]"
-            git push 
+            git push -q https://${GITHUB_TOKEN}@github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
 
 workflows:
   version: 2
