@@ -21,7 +21,7 @@ jobs:
             echo "" >> Singularity
             git add Singularity
             git commit -m "shub build latest [skip ci]"
-            git push 
+            git push -q https://${GITHUB_TOKEN}@github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
       - run:
           name: Building prepdwi docker container
           command: |
