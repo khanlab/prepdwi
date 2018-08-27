@@ -83,24 +83,43 @@ Flag                            Options                   Description
 Participant Level
 ------------------
 
-At the participant level the T1 data and DWI data are being pre-processed using the following steps.
+At the participant level the T1 data and DWI data are being pre-processed using the following steps. At the end of preprocessing, it will run FSL DTI fit and generates fractional anisotropy (FA) images and mean diffusivity images and other results from DTI fitting, which can be found in the prepdwi folder.
 
-Denoising and unringing
+Denoising and Unringing
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+Denoising is performed as the first step of our pipeline. We are using the dwidenoise_ tool in MRtrix_ pipeline to perform the denoising process. After running denoisining the unring_ tool was used to remove the Gibbs ringing artefact in images.
+
+.. _dwidenoise: https://mrtrix.readthedocs.io/en/latest/reference/commands/dwidenoise.html
+.. _MRtrix: http://www.mrtrix.org/
+.. _unring: https://bitbucket.org/reisert/unring/overview
+
 
 top-up
 ^^^^^^^^
 
+topup_ is a FSL tool used for estimating and correcting susceptibility induced distortions in our pipeline. This can be used only if you have reversed phase-encoded pairs of images with distortion going in opposite directions. If not, use --no-topup flag.
+
+.. _topup: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/topup
+
+
 Eddy Current Correction
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+After running topup, the images are corrected for Eddy_Current_ using the eddy_ tool in FSL.
+
+.. _Eddy_Current: https://en.wikipedia.org/wiki/Eddy_current
+.. _eddy: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy
 
 T1w-T1w template (MNI152_1mm and MNI152NLin2009cAsym) registration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-BEDPOST
-^^^^^^^^
+BEDPOST (optional)
+^^^^^^^^^^^^^^^^^^^
+FSL BEDPOSTX performs Markov Chain Monte Carlo sampling to build up distributions on diffusion parameters at each voxel. It creates all the files necessary for running probabilistic tractography. To learn more information about the BEDPOSTX, please visit the FSL_ webpage. The results from the BEDPOSTX can be found at the bedpost folder created after running the participant level.
 
+.. _FSL: https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FDT/UserGuide
 
 
 Group Level
@@ -126,7 +145,7 @@ Here the subject ID should be as same as in the work folder. Not as in the bids 
 Participant2 Level
 --------------------
 
-Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either canned atlases with the --atlas option, where predefined atlases are defined in the cfg folder;  or can specify a new atlas with the --atlas_* options
+Runs probtrackx network connectivity between all regions in a given atlas labels file. Uses either can use atlases with the --atlas option, where predefined atlases are defined in the cfg folder;  or can specify a new atlas with the --atlas_* options. Participant2 level generates a connectivity matrix of the averaged fiber density between each ROI in the atlas. This matrix can be found in the prepdwi folder as a csv file. The fiber desity is calculated by averaging the number of connections from each seed volxel to a give target by the number of seeds (default: 5000). Then it is averaged by the number of voxols per ROI. 
 
 
 .. index::
