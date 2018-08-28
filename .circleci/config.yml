@@ -11,6 +11,7 @@ jobs:
           no_output_timeout: 1h
           command: |
               export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
               docker build -t $DOCKER_NAME .
               docker save $DOCKER_NAME -o /tmp/docker_image.tar
       - persist_to_workspace:
