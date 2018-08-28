@@ -1,4 +1,4 @@
-FROM khanlab/neuroglia-dwi:v1.3.2
+FROM khanlab/neuroglia-dwi:latest
 MAINTAINER <alik@robarts.ca>
 
 RUN mkdir -p /opt/prepdwi
