@@ -4,7 +4,7 @@ Prepdwi Pipeline
 
 The prepdwi pipeline is a BIDS App that has three different levels of analysis: a pre-processing pipeline (`participant`), tractography (`participant2`), and QC report generation (`group`). 
 
-The pre-processing pipeline aims to produce a filtered and corrected diffusion-weighted image, along with a set of basic quantitative maps, that can then be used for downstream analyses (tractography, microstructural modelling, and so on). The app is written in BASH, with each step generally written as a separate script, each called by the main  `prepdwi <../prepdwi>`_ script.  A summary of the processing steps is provided here, along with references to the corresponding code. 
+The pre-processing pipeline aims to produce a filtered and corrected diffusion-weighted image, along with a set of basic quantitative maps, that can then be used for downstream analyses (fitting, tractography, voxel-based analysis, microstructural modelling, and so on). The app is written in BASH, with each step generally written as a separate script, each called by the main  `prepdwi <../prepdwi>`_ script.  A summary of the processing steps is provided here, along with references to the corresponding code. 
 
 T1 pre-processing  (`code <../bin/processT1>`_)
  * Skull-stripping with FSL BET (options: -f 0.4 -B) [cite] 
@@ -19,8 +19,8 @@ T1 atlas registration
  * Atlas labels from the ``labels`` folders are transformed to the subject T1 space with reg_resample (NiftyReg 1.3.9)  `code <../bin/propLabels_reg_bspline_f3d>`_
 
 DWI pre-processing:
- * DWI Denoising is performed on the raw DWI using dwidenoise_ from (MRtrix3) `code <../bin/processDwiDenoise>`_
- * Removal of Gibb's ringing artifacts was performed with the unring_ tool  `code <../bin/processUnring>`_
+ * DWI Denoising is performed on the raw DWI using dwidenoise (MRtrix3) `code <../bin/processDwiDenoise>`_
+ * Removal of Gibb's ringing artifacts was performed with the unring tool  `code <../bin/processUnring>`_
  * If multiple phase-encode directions exist:
         * Susceptibility-induced distortions are corrected with top-up & eddy (FSL)
         * Uses the b02b0 preset on average b0 images and requires JSON flags ``PhaseEncodingDirection`` and ``EffectiveEchoSpacing``, and uses the voxel dimension in the phase encode direction to generate the ``acqp`` file  `code <../bin/processTopUp>`_)
@@ -39,10 +39,6 @@ DWI pre-processing:
         * DKE fitting 
  * export to BIDS-like output
  
-.. _dwidenoise: https://mrtrix.readthedocs.io/en/latest/reference/commands/dwidenoise.html
-.. _unring: https://bitbucket.org/reisert/unring/overview
-
-
  
 etc:
  * BIDS [cite]
