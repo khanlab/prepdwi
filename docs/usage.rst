@@ -1,5 +1,5 @@
 =================
-Prepdwi Pipeline
+Usage
 =================
 
 Prepdwi has three level of analysis named as participant, group and participant2.
