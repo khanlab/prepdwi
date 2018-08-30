@@ -12,6 +12,7 @@ Prepdwi is a BIDS App developed by the Khan Lab to pre-process diffusion-weighte
    :maxdepth: 2
 
    installation
+   usage
    pipeline
    support
    citing
