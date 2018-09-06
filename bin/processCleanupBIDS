@@ -141,6 +141,16 @@ do
 
 done
 
+for map in dmean dax drad fa 
+do
+
+ if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_${map}dti.nii.gz ]
+ then
+ cp -v $in_dke/${map}_dti.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_${map}dti.nii.gz
+ fi
+
+done
+
 
 fi
 
