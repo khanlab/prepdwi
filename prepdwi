@@ -34,16 +34,22 @@ in_atlas_dir=$execpath/atlases
 
 matching_dwi=
 participant_label=
-notopup=0
-nodke=0
+
 nodenoise=0
-bedpost=1
+nounring=0
+notopup=0
+noeddy=0
+nodistcorr=0
+noregT1=0
+nodke=0
+nobedpost=0
+nogradcorr=1
+
 matching_T1w=
 n_cpus=8
 reg_init_subj=
 grad_coeff_file=
 scratch_dir=
-noregT1=0
 
 resample_res=
 
@@ -60,6 +66,7 @@ if [ "$#" -lt 3 ]
 then
  echo "Usage: prepdwi bids_dir output_dir {participant,group,participant2} <optional arguments>"
  echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
+ echo "          [--n_cpus NCPUS] (for bedpost, default: 8) "
  echo "          [--matching_dwi MATCHING_PATTERN]"
  echo "          [--matching_T1w MATCHING_STRING]"
  echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
@@ -67,12 +74,18 @@ then
  echo "          [-w WORK_DIR]  (scratch directory)"
  echo "          [--resample_res ISOTROPIC_RES_IN_MM]  (default uses native resolution)"
  echo ""
- echo "          [--no-regT1]"
-# echo "          [--no-denoise]"
+ echo "       Disable specific steps for pre-processed DWI:"
+ echo "          [--no-denoise]"
+ echo "          [--no-unring]"
  echo "          [--no-topup]"
- echo "          [--no-bedpost]"
+ echo "          [--no-eddy]"
+ echo "          [--no-distcorr]"
+ echo "          [--no-regT1]"
+ echo ""
+ echo "       Disable specific post-processing steps:"
  echo "          [--no-dke]"
- echo "          [--n_cpus NCPUS] (for bedpost, default: 8) "
+ echo "          [--no-bedpost]"
+ echo ""
  echo ""
  echo " participant2 (probtrack connectivity) options:"
  echo "          [--nprobseeds] N (for probtrackx, default: 5000) "
@@ -112,14 +125,22 @@ while :; do
 	     usage
             exit
               ;;
+    --no-denoise )
+	nodenoise=1;;
+    --no-unring )
+	nounring=1;;
+    --no-topup )
+	notopup=1;;
+    --no-eddy )
+	noeddy=1;;
+    --no-distcorr )
+	nodistcorr=1;;
     --no-regT1 )
 	noregT1=1;;
-     --no-topup )
-	notopup=1;;
-      --no-denoise )
-	nodenoise=1;;
+    --no-gradcorr )
+	nogradcorr=1;;
     --no-bedpost )
-	bedpost=0;;
+	nobedpost=1;;
      --no-dke )
 	nodke=1;;
      --n_cpus )       # takes an option argument; ensure it has been specified.
@@ -202,12 +223,14 @@ while :; do
           if [ "$2" ]; then
                 grad_coeff_file=$2
                   shift
+                  nogradcorr=0
 	      else
               die 'error: "--grad_coeff_file" requires a non-empty option argument.'
             fi
               ;;
      --grad_coeff_file=?*)
           grad_coeff_file=${1#*=} # delete everything up to "=" and assign the remainder.
+          nogradcorr=0
             ;;
           --grad_coeff_file=)         # handle the case of an empty --participant=
          die 'error: "--grad_coeff_file" requires a non-empty option argument.'
@@ -229,7 +252,6 @@ while :; do
           ;;
 
 
-     
       
       --atlas )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
@@ -338,35 +360,17 @@ then
         if [ -e $grad_coeff_file ]
         then
             grad_coeff_file=`realpath $grad_coeff_file`
-            if [ "$noregT1" = "1" ]
-            then
-            final_suffix=_gradCorr
-            else
-            final_suffix=_regT1_gradCorr
-            fi
-        do_gradcorr=1
         else
             echo "grad_coeff_file $grad_coeff_file does not exist! exiting!"
             exit 1
         fi
-
-else
-    if [ "$noregT1" = "1" ]
-    then
-    final_suffix=
-    else
-    final_suffix=_regT1
-    fi
-    do_gradcorr=0
 fi
-
 
 #exports for scripts to make use of
 export scratch_dir
 
 
 
-dwi_prefix=uncorrected
 
 participants=$in_bids/participants.tsv
 
@@ -481,6 +485,12 @@ do
         echo subj_sess_prefix $subj_sess_prefix
 
 
+#========================================================================
+#========================================================================
+#-- T1w Pre-processing steps:
+#========================================================================
+#========================================================================
+
 N_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | wc -l`
 in_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | head -n 1`
 
@@ -551,174 +561,326 @@ then
 
 done #atlas_dir
 
-
-#only proceed with pre-processing if preproc dwi does not exist
-#preproc_dwi=`ls $subj/dwi/uncorrected_*${final_suffix}/dwi.nii.gz | tail -n 1`
-#echo returnval $?
-#echo before preproc
-#if [ ! -e $preproc_dwi ]
-#then
-#echo about to preproc
-
-Ndwi=`eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi} | wc -l`
-
- if [ ! -e $subj_sess_prefix/dwi/uncorrected/dwi_$Ndwi.nii.gz ]
- then
-echo "--- Running importDWI ---"
- echo Ndwi=$Ndwi
-echo Found $Ndwi matching dwi, using all: 
- eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}
-
- echo $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix 
- $execpath/bin/importDWI ${dwi_prefix} $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix 
-else
-
-echo "--- Skipping importDWI ---"
- fi
-
- if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise/dwi_$Ndwi.nii.gz ]
- then
-echo "--- Running processDwiDenoise ---"
- echo $execpath/bin/processDwiDenoise uncorrected $subj_sess_prefix
- $execpath/bin/processDwiDenoise uncorrected $subj_sess_prefix
- else
-
-echo "--- Skipping processDwiDenoise ---"
- fi
-
- if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring/dwi_$Ndwi.nii.gz ]
- then
-echo "--- Running processUnring ---"
- echo $execpath/bin/processUnring uncorrected_denoise $subj_sess_prefix
- $execpath/bin/processUnring uncorrected_denoise $subj_sess_prefix
-
- else
-     echo "--- Skipping processUnring ---"
- fi
+#========================================================================
+#========================================================================
+#-- DWI Pre-processing steps:
+#========================================================================
+#========================================================================
 
 
+#========================================================================
+# import
+#========================================================================
 
- if [ "$notopup" = 1 -o "$Ndwi" = "1" ] 
- then
- # no topup :
-   eddy=eddy_dc
-  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy/dwi.nii.gz ]
-  then
-    echo "--- Running processEddyNoTopUp ---"
-    echo $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
-    $execpath/bin/processEddyNoTopUp uncorrected_denoise_unring $subj_sess_prefix
-   else
-     echo "--- Skipping processEddyNoTopUp ---"
-  fi
+ #thisdisable not defined since import step cannot be skipped 
+ thisstep=uncorrected
+ thisproduces=$subj_sess_prefix/dwi/${thisstep}/dwi_$Ndwi.nii.gz
 
-  #at this stage, can do non-linear distortion correction (fieldmap-free), by registration to T1
-  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy_dc/dwi.nii.gz ]
-  then
-   echo "--- Running processDistortCorrect ---"
-   echo $execpath/bin/processDistortCorrect uncorrected_denoise_unring_eddy $subj_sess_prefix
-   $execpath/bin/processDistortCorrect uncorrected_denoise_unring_eddy $subj_sess_prefix
- else
-   echo "--- Skipping processDistortCorrect ---"
-   fi
 
-  else
-#run top-up
-  eddy=topup_eddy
+ Ndwi=`eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi} | wc -l`
 
-  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup/dwi.nii.gz ]
-  then 
-    echo "--- Running processTopUp ---"
-    echo $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
-    $execpath/bin/processTopUp uncorrected_denoise_unring $subj_sess_prefix
-  else
-    echo "--- Skipping processTopUp ---"
-  fi
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running import into $thisstep  ---"
+        echo Ndwi=$Ndwi
+        echo Found $Ndwi matching dwi, using all: 
+        eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}
 
-  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup_eddy/dwi.nii.gz ]
-  then
-    echo "--- Running processEddy ---"
-    echo $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
-    $execpath/bin/processEddy uncorrected_denoise_unring_topup $subj_sess_prefix
+        echo "$execpath/bin/importDWI ${thisstep}  $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix "
+        $execpath/bin/importDWI ${thisstep}  $Ndwi `eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi}` $subj_sess_prefix 
+
     else
-        echo "--- Skipping processEddy ---"
-  fi
 
- fi
-
- if [ "$noregT1" = "0" ]
- then
-
-  if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_regT1/dwi.nii.gz ]
-  then
-echo "--- Running processRegT1 ---"
-  echo $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix $resample_res
-  $execpath/bin/processRegT1 uncorrected_denoise_unring_$eddy $subj_sess_prefix $resample_res
-else
-    echo "--- Skipping processRegT1 ---"
-  fi
-
-  else 
-      echo "--- Skipping processRegT1 (--no-regT1) ---"
-  fi
-
-
-  if [ $do_gradcorr = 1  ]
-  then
-
-      if [ "$noregT1" = "0" ]
-      then
-
-   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_regT1_gradCorr/dwi.nii.gz ]
-   then
-echo "--- Running processGradUnwarp ---"
-  echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
-  $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
-  else 
-echo "--- Skipping processGradUnwarp ---"
-  fi
-
-    else #gradcorr withtout regT1
-
-
-   if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}_gradCorr/dwi.nii.gz ]
-   then
-    echo "--- Running processGradUnwarp ---"
-      echo $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
-      $execpath/bin/processGradUnwarp uncorrected_denoise_unring_$eddy $grad_coeff_file $subj_sess_prefix
-      else 
-    echo "--- Skipping processGradUnwarp ---"
-      fi
-
-
-
+        echo "--- $thisstep already run ---"
     fi
 
+ prevstep=${thisstep}
 
+
+#========================================================================
+# denoise
+#========================================================================
+
+ thisdisable=$nodenoise
+ thisstep=denoise
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processDwiDenoise $prevstep $subj_sess_prefix
+        $execpath/bin/processDwiDenoise $prevstep $subj_sess_prefix
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# unring
+#========================================================================
+
+ thisdisable=$nounring
+ thisstep=unring
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processUnring $prevstep $subj_sess_prefix
+        $execpath/bin/processUnring $prevstep $subj_sess_prefix
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# topup
+#========================================================================
+
+#disable topup if only one dwi
+if [ "$Ndwi" = "1" ]
+then
+    notopup=1
 fi
 
+ thisdisable=$notopup
+ thisstep=topup
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
-  #else #if preproc dwi exists
-
- #if exists already, just need to set eddy to the proper value
- if [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy${final_suffix}/dwi.nii.gz ]
+ if [ "$thisdisable" = "1" ]
  then
-	 eddy=eddy
- elif [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_topup_eddy${final_suffix}/dwi.nii.gz ]
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processTopup $prevstep $subj_sess_prefix
+        $execpath/bin/processTopup $prevstep $subj_sess_prefix
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# eddy (after topup)
+#========================================================================
+
+
+#if topup or eddy is disabled, then disable this topup initialized eddy
+if [ "$notopup" = "1" ] || [ "$noeddy" = "1" ]
+then
+    thisdisable=1
+else
+    thisdisable=0
+fi
+
+thisstep=eddy
+thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
  then
-	 eddy=topup_eddy
- elif [ -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_eddy_dc${final_suffix}/dwi.nii.gz ]
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        $execpath/bin/processEddy ${prevstep%_topup} $subj_sess_prefix  #processEddy requires the step *before* topup, so strip topup off prevstep
+    else
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# eddy (no topup)
+#========================================================================
+
+#if topup is disabled, but eddy is not, then proceed
+if [ "$notopup" = "1" ] && [ "$noeddy" = "0" ]
+then
+    thisdisable=0
+else
+    thisdisable=1
+fi
+
+thisstep=eddy
+thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
  then
-    eddy=eddy_dc
- fi
-	
-
-  
- # fi #if not exist preproc dwi
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
 
 
-  #check if multi-shell
-  bval=$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.bval
-  shells=$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi.shells
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        $execpath/bin/processEddyNoTopUp ${prevstep} $subj_sess_prefix
+    else
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# distcorr (when no topup)
+#========================================================================
+
+#if topup is disabled, but eddy is not, then proceed
+if [ "$notopup" = "1" ] && [ "$nodistcorr" = "0" ]
+then
+    thisdisable=0
+else
+    thisdisable=1
+fi
+
+thisstep=dc
+thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processDistortCorrect ${prevstep} $subj_sess_prefix
+        $execpath/bin/processDistortCorrect ${prevstep} $subj_sess_prefix
+    else
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# regT1 (linear reg to T1w)
+#========================================================================
+
+ thisdisable=$noregT1
+ thisstep=regT1
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processRegT1 ${prevstep} $subj_sess_prefix $resample_res
+        $execpath/bin/processRegT1 ${prevstep} $subj_sess_prefix $resample_res
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+#========================================================================
+# gradCorr 
+#========================================================================
+
+ thisdisable=$nogradcorr
+ thisstep=gradCorr
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thistep} disabled ---"
+ else
+     prevstep=${prevstep}_${thisstep}
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $subj_sess_prefix
+        $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $subj_sess_prefix
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+ fi #if thisdisable
+
+
+
+#========================================================================
+# now all DWI pre-processing steps complete, create symlink to final step
+
+processed=$prevstep
+echo "Setting symlink for final preprocessed dwi work dir"
+ln -srfv $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/processed
+
+#========================================================================
+
+
+
+
+
+#========================================================================
+#========================================================================
+#-- DWI Post-processing steps:
+#========================================================================
+#========================================================================
+
+
+
+#========================================================================
+# check if multi-shell
+#========================================================================
+
+  bval=$subj_sess_prefix/dwi/$processed/dwi.bval
+  shells=$subj_sess_prefix/dwi/$processed/dwi.shells
+
  if [ ! -e $shells ]
  then
   echo "Checking number of shells..."
@@ -738,60 +900,83 @@ fi
   fi
 
 
-  #generate mean DWI for each shell
+#========================================================================
+# generate mean DWI for each shell
+#========================================================================
+
 for shell in `cat $shells`
 do
-    
-  echo octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi',$shell,'$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/avgDWI_bval-${shell}.nii.gz')"
-  octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/dwi',$shell,'$subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/avgDWI_bval-${shell}.nii.gz')"
+
+  echo octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/$processed/dwi',$shell,'$subj_sess_prefix/dwi/$processed/avgDWI_bval-${shell}.nii.gz')"
+  octave --eval "extractMeanDWI('$subj_sess_prefix/dwi/$processed/dwi',$shell,'$subj_sess_prefix/dwi/$processed/avgDWI_bval-${shell}.nii.gz')"
 
 done
 
+#========================================================================
+# bedpost
+#========================================================================
+ thisdisable=$nobedpost
+ thisstep=bedpost
+ thisproduces=$subj_sess_prefix/dwi/${processed}/$thisstep.bedpostX/dyads1.nii.gz
 
+ if [ "$thisdisable" = "1" ]
+ then
+    echo "--- ${thistep} disabled ---"
+ else
 
-  #continue running pipelines
-  if [ "$bedpost" = 1 ]
-  then 
-    if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}/bedpost.bedpostX/dyads1.nii.gz ]
+    if [ ! -e $thisproduces ]
     then
-echo "--- Running processBedpost ---"
-    echo $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
-    $execpath/bin/processBedpost $n_cpus uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processBedpost $n_cpus $processed $subj_sess_prefix
+        $execpath/bin/processBedpost $n_cpus $processed $subj_sess_prefix
     else
-        echo "--- Skipping processBedpost ---"
+        echo "--- $thisstep already run ---"
     fi
-    else
-        echo "--- Skipping processBedpost (--no-bedpost) ---"
-  fi 
 
+ fi #if thisdisable
 
-  if [ "$is_multishell" = 1 ]
-  then 
+#========================================================================
+# DKE
+#========================================================================
+if [ "nodke" = 0 ] && [  "$is_multishell" = 1 ]
+then
+    thisdisable=0
+else
+    thisdisable=1
+fi
 
-    
-      if [ "$nodke" = "0" ]
+ thisstep=dke
+ thisproduces=$subj_sess_prefix/dwi/${processed}_dke/kmean.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+    echo "--- ${thistep} disabled ---"
+ else
+
+    if [ ! -e $thisproduces ]
     then
-      if [ ! -e $subj_sess_prefix/dwi/uncorrected_denoise_unring_${eddy}${final_suffix}_dke/kmean.nii.gz ]
-    then
-echo "--- Running processDKE ---"
-    echo $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
-    $execpath/bin/processDKE uncorrected_denoise_unring_${eddy}${final_suffix} $subj_sess_prefix
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processDKE $processed $subj_sess_prefix
+        $execpath/bin/processDKE $processed $subj_sess_prefix
     else
-        echo "--- Skipping processDKE ---"
+        echo "--- $thisstep already run ---"
     fi
-    else
 
-        echo "--- Skipping processDKE (--no-dke) ---"
-    fi
-  fi 
+ fi #if thisdisable
 
-  #internally checks if files already exist before copying
+
+
+#========================================================================
+# cleanup BIDS (make symlinks to BIDS output)
+#========================================================================
+
 echo "--- Running processCleanupBIDS ---"
-  echo $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj_sess_prefix
-  $execpath/bin/processCleanupBIDS uncorrected_denoise_unring_${eddy}${final_suffix} $derivatives $subj_sess_prefix
+$execpath/bin/processCleanupBIDS $processed $derivatives $subj_sess_prefix
+
+
+
 
 done #loop over subj/sess
-
 done #loop over subj
 
 
@@ -847,7 +1032,7 @@ elif [ "$analysis_level" = "group" ]
    
     pushd $work_folder
     $execpath/bin/genOverlay_brainmask $qc_dir $subj_sess_prefix > /dev/null
-    $execpath/bin/genOverlay_mask $qc_dir dwi/uncorrected_*_eddy/dwi.nii.gz dwi/uncorrected_*_eddy/brainmask.nii.gz dwi_brainmask $subj_sess_prefix > /dev/null
+    $execpath/bin/genOverlay_mask $qc_dir dwi/processed/dwi.nii.gz dwi/processed/brainmask.nii.gz dwi_brainmask $subj_sess_prefix > /dev/null
 
     for atlas_dir in `ls -d $in_atlas_dir/*`
     do
