@@ -147,6 +147,8 @@ workflows:
           filters:
             tags:
               only: /.*/
+            branches:
+              only: master
       - test:
           requires:
             - build
@@ -154,6 +156,8 @@ workflows:
           filters:
             tags:
               only: /.*/
+            branches:
+              only: master
       - deploy_dev:
           requires:
             - build
@@ -161,6 +165,8 @@ workflows:
           filters:
             tags:
               ignore: /^v.*/
+            branches:
+              only: master
           context: org-global
       - deploy_release:
           requires:
