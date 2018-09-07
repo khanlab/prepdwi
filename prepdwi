@@ -65,32 +65,39 @@ nprobseeds=5000
 if [ "$#" -lt 3 ]
 then
  echo "Usage: prepdwi bids_dir output_dir {participant,group,participant2} <optional arguments>"
- echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
- echo "          [--n_cpus NCPUS] (for bedpost, default: 8) "
- echo "          [--matching_dwi MATCHING_PATTERN]"
- echo "          [--matching_T1w MATCHING_STRING]"
- echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
- echo "          [--grad_coeff_file GRAD_COEFF_FILE]"
- echo "          [-w WORK_DIR]  (scratch directory)"
- echo "          [--resample_res ISOTROPIC_RES_IN_MM]  (default uses native resolution)"
  echo ""
- echo "       Disable specific steps for pre-processed DWI:"
+ echo " General options:"
+ echo ""
+ echo "          [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]"
+ echo "          [-w WORK_DIR]  (scratch directory)"
+ echo "          [--n_cpus NCPUS] (default: 8) "
+ echo ""
+ echo " participant options:"
+ echo ""
+ echo "          [--matching_dwi MATCHING_PATTERN] (for selecting dwi)"
+ echo "          [--matching_T1w MATCHING_STRING] (for selecting T1w)"
+ echo""
+ echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
+ echo ""
  echo "          [--no-denoise]"
  echo "          [--no-unring]"
  echo "          [--no-topup]"
  echo "          [--no-eddy]"
  echo "          [--no-distcorr]"
  echo "          [--no-regT1]"
+ echo "                [--resample_res ISOTROPIC_RES_IN_MM]  (default uses native resolution)"
+ echo "          [--no-gradcorr]"
+ echo "                [--grad_coeff_file GRAD_COEFF_FILE]"
  echo ""
- echo "       Disable specific post-processing steps:"
  echo "          [--no-dke]"
  echo "          [--no-bedpost]"
  echo ""
  echo ""
  echo " participant2 (probtrack connectivity) options:"
- echo "          [--nprobseeds] N (for probtrackx, default: 5000) "
+ echo ""
+ echo "          [--nprobseeds N ] (for probtrackx, default: 5000) "
  echo "      Choose built-in atlas:"
- echo "          [--atlas NAME (default: dosenbach)"
+ echo "          [--atlas NAME ] (default: dosenbach)"
  echo ""
  echo "       Available built-in atlas labels/csv:"
  pushd $execpath/cfg > /dev/null
@@ -435,25 +442,13 @@ else
 fi
 
 
-
-#copy atlases to output folder, and run registration for all of them
+#use symlinks instead of copying 
 for atlas_dir in `ls -d $in_atlas_dir/*`
 do
  atlas_name=${atlas_dir##*/}
 
- if [ ! -e $atlas_name ]
- then
-# iscopying=iscopying_${atlas_name}
- #mkdir to ensure only one process copies the files..
- if $(mkdir -p $atlas_name )
- then
- #  mkdir -p $atlas_name
-   cp -Rv $atlas_dir/* $atlas_name
- #  rmdir $iscopying
- else
-   sleep 30 #wait for 1st job to finish copying
- fi
- fi
+ ln -sfv $atlas_dir $atlas_name
+
 done
 
 
@@ -556,7 +551,8 @@ then
  fi # if [ -n "$reg_init_subj" ]
 
 
-
+ #remove link to atlas after running
+ rm $atlas_name
 
 
 done #atlas_dir
@@ -608,9 +604,8 @@ done #atlas_dir
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -622,6 +617,8 @@ done #atlas_dir
 
         echo "--- $thisstep already run ---"
     fi
+     
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -637,9 +634,8 @@ done #atlas_dir
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -651,6 +647,7 @@ done #atlas_dir
 
         echo "--- $thisstep already run ---"
     fi
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -672,10 +669,8 @@ fi
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
-
 
     if [ ! -e $thisproduces ]
     then
@@ -686,6 +681,8 @@ fi
 
         echo "--- $thisstep already run ---"
     fi
+
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -709,9 +706,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -721,6 +717,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
         echo "--- $thisstep already run ---"
     fi
+     
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -743,9 +741,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -755,6 +752,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
         echo "--- $thisstep already run ---"
     fi
+     
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -777,10 +776,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
-
 
     if [ ! -e $thisproduces ]
     then
@@ -790,6 +787,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
         echo "--- $thisstep already run ---"
     fi
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -805,9 +803,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -819,6 +816,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
         echo "--- $thisstep already run ---"
     fi
+     
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -834,9 +833,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
-     prevstep=${prevstep}_${thisstep}
 
 
     if [ ! -e $thisproduces ]
@@ -848,6 +846,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
         echo "--- $thisstep already run ---"
     fi
+     
+    prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
 
@@ -921,7 +921,7 @@ done
 
  if [ "$thisdisable" = "1" ]
  then
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
 
     if [ ! -e $thisproduces ]
@@ -950,7 +950,7 @@ fi
 
  if [ "$thisdisable" = "1" ]
  then
-    echo "--- ${thistep} disabled ---"
+    echo "--- ${thisstep} disabled ---"
  else
 
     if [ ! -e $thisproduces ]

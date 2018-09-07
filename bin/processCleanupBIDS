@@ -79,7 +79,7 @@ mkdir -p $out_dwi_dir
 
 for ext in nii.gz bvec bval
 do
- if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}preproc.$ext ]
+ if [ -e $dwi_dir/dwi.$ext ]
  then
  ln -srfv $dwi_dir/dwi.$ext $out_dwi_dir/${subj_sess_prefix}_dwi${flags}preproc.$ext
  fi
@@ -87,13 +87,13 @@ do
 done
 
 #grad dev
-if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}preproc.grad_dev.nii.gz ]
+if [ -e $dwi_dir/grad_dev.nii.gz ]
 then
  ln -srfv  $dwi_dir/grad_dev.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}preproc.grad_dev.nii.gz
  fi
 
 
-if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}brainmask.nii.gz ]
+if [ -e $dwi_dir/brainmask.nii.gz ]
 then
  ln -srfv $dwi_dir/brainmask.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}brainmask.nii.gz
 fi
@@ -101,7 +101,7 @@ fi
 for map in FA MD L1 L2 L3 S0 V1 V2 V3
 do
 
- if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-FSL_$map.nii.gz ]
+ if [ -e  $dwi_dir/dti_$map.nii.gz  ]
  then
  ln -srfv $dwi_dir/dti_$map.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-FSL_$map.nii.gz
  fi
@@ -114,18 +114,18 @@ for im in $dwi_dir/avgDWI_bval-*.nii.gz
 do
     inB=${im%%.nii*}
     inB=${inB##*avgDWI_bval-}
+    if [ -e $im ]
+    then
     ln -srfv $im $out_dwi_dir/${subj_sess_prefix}_dwi${flags}bval-${inB}_avgDWI.nii.gz
-
+    fi
 done
 
 
 in_bedpost=$dwi_dir/bedpost.bedpostX
 out_bedpost_dir=$out_bedpost_root/${subj_sess_prefix}
-if [ -e $in_bedpost -a ! -e $out_bedpost_dir ]
+if [ -e $in_bedpost ]
 then
- mkdir -p $out_bedpost_dir
-echo about to copy bedpost to clean bids
-cp -srfv $in_bedpost/* $out_bedpost_dir
+ ln -srfv $in_bedpost $out_bedpost_dir
 fi
 
 in_dke=${dwi_dir}_dke
@@ -134,7 +134,7 @@ then
 for map in dmean dax drad fa kmean kax krad kfa mkt 
 do
 
- if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_$map.nii.gz ]
+ if [ -e $in_dke/$map.nii.gz ]
  then
  ln -srfv $in_dke/$map.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_$map.nii.gz
  fi
@@ -144,7 +144,7 @@ done
 for map in dmean dax drad fa 
 do
 
- if [ ! -e $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_${map}dti.nii.gz ]
+ if [ -e $in_dke/${map}_dti.nii.gz ]
  then
  ln -srfv $in_dke/${map}_dti.nii.gz $out_dwi_dir/${subj_sess_prefix}_dwi${flags}proc-DKE_${map}dti.nii.gz
  fi
