@@ -706,7 +706,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
-    echo "--- ${thisstep} disabled ---"
+     echo "--- ${thisstep} (no top-up) disabled ---"
  else
 
 
@@ -715,7 +715,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
         echo "--- Running $thisstep  ---"
         $execpath/bin/processEddy ${prevstep%_topup} $subj_sess_prefix  #processEddy requires the step *before* topup, so strip topup off prevstep
     else
-        echo "--- $thisstep already run ---"
+	    echo "--- $thisstep (no topup) already run ---"
     fi
      
     prevstep=${prevstep}_${thisstep}
@@ -798,7 +798,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
  thisdisable=$noregT1
  thisstep=regT1
- thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
  if [ "$thisdisable" = "1" ]
  then

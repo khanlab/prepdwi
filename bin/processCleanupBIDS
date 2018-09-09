@@ -123,6 +123,8 @@ done
 
 in_bedpost=$dwi_dir/bedpost.bedpostX
 out_bedpost_dir=$out_bedpost_root/${subj_sess_prefix}
+mkdir -p $out_bedpost_root
+
 if [ -e $in_bedpost ]
 then
  ln -srfv $in_bedpost $out_bedpost_dir
