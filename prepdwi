@@ -713,7 +713,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     if [ ! -e $thisproduces ]
     then
         echo "--- Running $thisstep  ---"
-        $execpath/bin/processEddy ${prevstep%_topup} $subj_sess_prefix  #processEddy requires the step *before* topup, so strip topup off prevstep
+        $execpath/bin/processEddy ${prevstep} $subj_sess_prefix 
     else
 	    echo "--- $thisstep (no topup) already run ---"
     fi
