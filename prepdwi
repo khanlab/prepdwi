@@ -675,8 +675,8 @@ fi
     if [ ! -e $thisproduces ]
     then
         echo "--- Running $thisstep  ---"
-        echo $execpath/bin/processTopup $prevstep $subj_sess_prefix
-        $execpath/bin/processTopup $prevstep $subj_sess_prefix
+        echo $execpath/bin/processTopUp $prevstep $subj_sess_prefix
+        $execpath/bin/processTopUp $prevstep $subj_sess_prefix
     else
 
         echo "--- $thisstep already run ---"
