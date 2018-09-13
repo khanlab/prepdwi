@@ -489,6 +489,20 @@ do
 N_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | wc -l`
 in_t1w=`eval ls $in_bids/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_t1w} | head -n 1`
 
+if [ "$N_t1w" = 0 ]
+then
+	
+	echo "--- No T1w images found! ---"
+	echo "	automatically setting --no-regT1"
+	noregT1=1
+fi
+
+if [ "$noregT1" = 1 ]
+then
+	echo "--- T1w pre-preprocessing disabled (--no-regT1) "
+else
+
+
 if [ ! -e $subj_sess_prefix/t1/t1.nii.gz ]
 then
 echo --- Running importT1 ---
@@ -498,6 +512,8 @@ $execpath/bin/importT1 $in_t1w $subj_sess_prefix
 else
 echo --- Skipping importT1 ---
 fi
+
+
 
 if [ ! -e $subj_sess_prefix/${t1_img_type} ]
 then
@@ -556,6 +572,9 @@ then
 
 
 done #atlas_dir
+
+fi #N_t1w=0
+
 
 #========================================================================
 #========================================================================
