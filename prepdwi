@@ -859,8 +859,8 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     if [ ! -e $thisproduces ]
     then
         echo "--- Running $thisstep  ---"
-        echo $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $subj_sess_prefix
-        $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $subj_sess_prefix
+        echo $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $noregT1 $subj_sess_prefix
+        $execpath/bin/processGradUnwarp ${prevstep} $grad_coeff_file $noregT1 $subj_sess_prefix
     else
 
         echo "--- $thisstep already run ---"
