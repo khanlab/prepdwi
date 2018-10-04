@@ -88,8 +88,8 @@ echo flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0
 flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0_t1
 
 #rotate bvec
-echo octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
-octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
 
 #copy bval
 echo cp $dwi_bval $out_dir/dwi.bval
