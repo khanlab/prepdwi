@@ -170,8 +170,8 @@ if [ "$do_regT1" = 1 ]
  then
 
 #rotate bvec
-echo octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$xfm_b0_t1','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
-octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$xfm_b0_t1','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
 
 
 else
