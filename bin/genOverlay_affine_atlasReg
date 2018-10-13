@@ -11,14 +11,14 @@ fi
 	#general usage for per-subj processing is to specify the two images to compare, and generate an overlay of these
 	#put it in quickchecks folder, named according to processing
 	#could then be a command for creating report html files
-atlas_name=$1
-
-shift 1
-
 
 qc_dir=$1
 mkdir -p $qc_dir
 shift 1
+
+atlas_name=$1
+shift 1
+
 
 if [ -f $1 ]
 then
