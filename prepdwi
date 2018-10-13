@@ -415,6 +415,28 @@ then
    echo "atlas config file $execpath/cfg/$atlas does not exist!"
    exit 1
 fi
+
+
+#use symlinks instead of copying 
+for atlas_dir in `ls -d $in_atlas_dir/*`
+do
+ atlas_name=${atlas_dir##*/}
+
+ 
+ if [ -e $work_folder/$atlas_name ]
+ then
+	 if [ -n "$work_folder" -a -n "$atlas_name" ]
+	 then
+		echo clearing existing atlas folder
+		rm -rf $work_folder/$atlas_name
+	fi
+ fi
+
+ ln -sfv $atlas_dir $work_folder/$atlas_name
+
+done
+
+
 #=====================================================================
 #--------------------- BEGIN STAGE:  participant  --------------------
 #=====================================================================
@@ -440,16 +462,6 @@ then
 else
   searchstring_t1w=*T1w.nii*
 fi
-
-
-#use symlinks instead of copying 
-for atlas_dir in `ls -d $in_atlas_dir/*`
-do
- atlas_name=${atlas_dir##*/}
-
- ln -sfv $atlas_dir $atlas_name
-
-done
 
 
 
@@ -838,6 +850,9 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
      
     prevstep=${prevstep}_${thisstep}
 
+    echo "Setting symlink for regT1 preprocessed dwi work dir"
+    ln -srfv $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/proc_regT1
+
  fi #if thisdisable
 
 
@@ -1050,19 +1065,28 @@ elif [ "$analysis_level" = "group" ]
 
    
     pushd $work_folder
-    $execpath/bin/genOverlay_brainmask $qc_dir $subj_sess_prefix > /dev/null
-    $execpath/bin/genOverlay_mask $qc_dir dwi/processed/dwi.nii.gz dwi/processed/brainmask.nii.gz dwi_brainmask $subj_sess_prefix > /dev/null
+    echo $execpath/bin/genOverlay_brainmask $qc_dir $subj_sess_prefix 
+    $execpath/bin/genOverlay_brainmask $qc_dir $subj_sess_prefix
+    echo $execpath/bin/genOverlay_mask $qc_dir dwi/processed/dwi.nii.gz dwi/processed/brainmask.nii.gz dwi_brainmask $subj_sess_prefix 
+    $execpath/bin/genOverlay_mask $qc_dir dwi/processed/dwi.nii.gz dwi/processed/brainmask.nii.gz dwi_brainmask $subj_sess_prefix 
 
     for atlas_dir in `ls -d $in_atlas_dir/*`
     do
      atlas_name=${atlas_dir##*/}
-     $execpath/bin/genOverlay_affine_atlasReg $qc_dir $atlas_name $subj_sess_prefix > /dev/null
-     $execpath/bin/genOverlay_bspline_atlasReg $qc_dir $atlas_name $subj_sess_prefix > /dev/null
+     echo $execpath/bin/genOverlay_affine_atlasReg $qc_dir $atlas_name $subj_sess_prefix 
+     $execpath/bin/genOverlay_affine_atlasReg $qc_dir $atlas_name $subj_sess_prefix 
+  echo    $execpath/bin/genOverlay_bspline_atlasReg $qc_dir $atlas_name $subj_sess_prefix 
+     $execpath/bin/genOverlay_bspline_atlasReg $qc_dir $atlas_name $subj_sess_prefix 
     done
+    
+    if [ -e $subj_sess_prefix/dwi/proc_regT1 ]
+    then
 
     #dwi and T1 reg
-    $execpath/bin/genOverlay_mask $qc_dir dwi/uncorrected_*_regT1/dwi.nii.gz dwi/uncorrected_*_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj_sess_prefix > /dev/null
+    echo $execpath/bin/genOverlay_mask $qc_dir dwi/proc_regT1/dwi.nii.gz dwi/proc_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj_sess_prefix 
+    $execpath/bin/genOverlay_mask $qc_dir dwi/proc_regT1/dwi.nii.gz dwi/proc_regT1/epi_reg/t1_diffres.nii.gz reg_dwi_t1 $subj_sess_prefix 
     
+    fi
 
     popd
    
@@ -1079,11 +1103,11 @@ elif [ "$analysis_level" = "group" ]
     sed -i 's/src="/src="images\//' $final_qc
 
     #move files and clean-up
-    rm $work_folder/${qc_dir}/*/grot*.png
-    mv $work_folder/${qc_dir}/*/*.png $derivatives/reports/images
-    rm $work_folder/${qc_dir}/*/*
-    rmdir  $work_folder/${qc_dir}/*
-    rmdir $work_folder/${qc_dir}
+    rm -v $work_folder/${qc_dir}/*/grot*.png
+    mv -v $work_folder/${qc_dir}/*/*.png $derivatives/reports/images
+    rm -v $work_folder/${qc_dir}/*/*
+    rmdir -v  $work_folder/${qc_dir}/*
+    rmdir -v $work_folder/${qc_dir}
 
     done #subj-ses
 
