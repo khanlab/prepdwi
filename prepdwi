@@ -422,15 +422,17 @@ for atlas_dir in `ls -d $in_atlas_dir/*`
 do
  atlas_name=${atlas_dir##*/}
 
- 
- if [ -e $work_folder/$atlas_name ]
- then
-	 if [ -n "$work_folder" -a -n "$atlas_name" ]
-	 then
-		echo clearing existing atlas folder
-		rm -rf $work_folder/$atlas_name
-	fi
- fi
+
+# don't clear out atlas folder, as other parallel runs may be using it:
+
+# if [ -e $work_folder/$atlas_name ]
+# then
+#	 if [ -n "$work_folder" -a -n "$atlas_name" ]
+#	 then
+#		echo clearing existing atlas folder
+#		rm -rf $work_folder/$atlas_name
+#	fi
+# fi
 
  ln -sfv $atlas_dir $work_folder/$atlas_name
 
@@ -579,8 +581,9 @@ then
  fi # if [ -n "$reg_init_subj" ]
 
 
- #remove link to atlas after running
- rm $atlas_name
+ #remove link to atlas after running -- don't do this, as other parallel runs may be using it!!
+
+# rm $atlas_name
 
 
 done #atlas_dir
