@@ -80,7 +80,8 @@ then
  echo "          [--matching_dwi MATCHING_PATTERN] (for selecting dwi)"
  echo "          [--matching_T1w MATCHING_STRING] (for selecting T1w)"
  echo""
- echo "		 [--in_brainmask_dir BRAINMASK_DIR]  (e.g. output root folder from gradcorrected 7TBEaST)"
+ echo "          [--in_brainmask_dir BRAINMASK_DIR]  (e.g. output root folder from gradcorrected 7TBEaST)"
+ echo ""
  echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
  echo ""
  echo "          [--no-denoise]"
@@ -396,6 +397,25 @@ fi
 export scratch_dir
 
 
+if [ -n "$in_brainmask_dir" ]
+then
+
+ if [ ! -e $in_brainmask_dir ]
+ then
+    echo "Input brainmask dir $in_brainmask_dir does not exist! exiting.."
+    exit 1
+ fi
+
+ in_brainmask_dir=`realpath $in_brainmask_dir`
+ custom_brainmask=1
+ searchstring_brainmask=*T1w*brain.nii.gz #skull-stripped intensity normalized T1w
+
+else
+ custom_brainmask=0
+
+fi
+
+
 
 
 participants=$in_bids/participants.tsv
@@ -484,24 +504,6 @@ else
   searchstring_t1w=*T1w.nii*
 fi
 
-
-if [ -n "$in_brainmask_dir" ]
-then
-
- if [ ! -e $in_brainmask_dir ]
- then
-    echo "Input brainmask dir $in_brainmask_dir does not exist! exiting.."
-    exit 1
- fi
-
- custom_brainmask=1
- searchstring_brainmask=*T1w*brain.nii.gz #skull-stripped intensity normalized T1w
-
-else
- custom_brainmask=0
-
-fi
-
 t1_img_type=t1/t1.brain.inorm.nii.gz
 
 for subj in $subjlist 
@@ -545,6 +547,8 @@ t1w_in_brainmask=`eval ls $in_brainmask_dir/$subj_sess_dir/anat/${subj_sess_pref
 if [ -e $t1w_in_brainmask ]
 then
 	echo "Using pre-computed skull-stripped image..."
+	echo mkdir -p $subj_sess_prefix/t1
+	mkdir -p $subj_sess_prefix/t1
 	echo cp -v $t1w_in_brainmask $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
 	cp -v $t1w_in_brainmask $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
 fi
