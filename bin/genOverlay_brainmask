@@ -35,7 +35,7 @@ subj_dir=$subj
 
 #put pipeline commands here
 t1=$subj_dir/t1/t1.nii.gz
-brain=$subj_dir/t1/t1.brain.nii.gz
+brain=$subj_dir/t1/t1.brain.inorm.nii.gz
 
 
 output_list="$output_list $t1 $brain"
