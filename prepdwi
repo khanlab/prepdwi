@@ -80,7 +80,7 @@ then
  echo "          [--matching_dwi MATCHING_PATTERN] (for selecting dwi)"
  echo "          [--matching_T1w MATCHING_STRING] (for selecting T1w)"
  echo""
- echo "          [--in_brainmask_dir BRAINMASK_DIR]  (e.g. output root folder from gradcorrected 7TBEaST)"
+ echo "          [--in_brainmask_dir BRAINMASK_DIR]  (e.g. output folder from BEaST bids app)"
  echo ""
  echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
  echo ""
