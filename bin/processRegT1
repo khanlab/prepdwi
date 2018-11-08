@@ -54,17 +54,14 @@ then
  dtifit -k $dwi_vol -o $dwi_dir/dti -m $brain_mask -r $dwi_bvec -b $dwi_bval
 fi
 
+#use the original (non-grad-corrected) T1w image as the input, since dwi is not grad corrected at this stage either..
 t1=$t1_dir/t1.nii.gz
-t1_brain=$t1_dir/t1.brain.inorm.nii.gz
 
 epireg_work=$out_dir/epi_reg
 mkdir -p $epireg_work
 
 out_prefix=$epireg_work/b0_to_t1
 
-#run epi reg
-#echo epi_reg --epi=$b0 --t1=$t1 --t1brain=$t1_brain --out=$out_prefix --noclean
-#epi_reg --epi=$b0 --t1=$t1 --t1brain=$t1_brain --out=$out_prefix --noclean
 
 xfm_b0_t1=$out_prefix.mat
 
@@ -88,8 +85,8 @@ echo flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0
 flirt -in $b0 -ref $t1 -applyisoxfm $diff_res -out $b0_t1_ref -init $xfm_b0_t1
 
 #rotate bvec
-echo octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
-octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$epireg_work/b0_to_t1_aladin.xfm','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
 
 #copy bval
 echo cp $dwi_bval $out_dir/dwi.bval

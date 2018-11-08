@@ -18,5 +18,7 @@ end
 inds_valid=find(ncenters==min(ncenters));
 
 best=bcenters{inds_valid(end)};
-shells=round(best(2:end));
+
+%round to nearest hundred 
+shells=round( best(2:end)./100  ).*100;
 end

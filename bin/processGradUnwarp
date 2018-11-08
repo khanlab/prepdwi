@@ -2,11 +2,11 @@
 
 # precondition:  processRegT1
 
-if [ "$#" -lt 3 ]
+if [ "$#" -lt 4 ]
 then
  echo " writes output to dwi/<input>_gradCorr"
  echo ""
- echo "Command-line Usage: $0 <in_dwi_name> <grad_coeff> <subjid>"
+ echo "Command-line Usage: $0 <in_dwi_name> <grad_coeff> <no_regT1?> <subjid>"
  exit 0
 fi
 
@@ -14,10 +14,10 @@ output_dir=.
 
 in_dwi=$1
 
-in_regT1=${in_dwi}_regT1
 
 grad_coeff=$2
-shift 2
+noregT1=$3
+shift 3
 
 
 if [ -f $1 ]
@@ -35,17 +35,19 @@ do
 
 subj_dir=$output_dir/$subj
 
-dwi_dir=$subj_dir/dwi/${in_dwi}
-regT1_dir=$subj_dir/dwi/${in_regT1}
-
-if [ -e "$regT1_dir" ]
+if [ "$noregT1" = 1 ]
 then
-out_name=${in_regT1}_gradCorr
-do_regT1=1
-else
+dwi_dir=$subj_dir/dwi/${in_dwi}
 out_name=${in_dwi}_gradCorr
 do_regT1=0
+else
+ # regT1 is enabled, then in_dwi has _regT1 suffixed
+ regT1_dir=$subj_dir/dwi/${in_dwi}
+ dwi_dir=${subj_dir}/dwi/${in_dwi%_regT1}
+ do_regT1=1
 fi
+
+out_name=${in_dwi}_gradCorr
 
 
 out_dir=$subj_dir/dwi/${out_name}
@@ -168,8 +170,8 @@ if [ "$do_regT1" = 1 ]
  then
 
 #rotate bvec
-echo octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$xfm_b0_t1','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
-octave --eval "rotate_bvecs_imgorient('$dwi_bvec','$xfm_b0_t1','$b0','$b0_t1_ref','$out_dir/dwi.bvec')"
+echo rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
+rotate_bvecs $dwi_bvec $xfm_b0_t1 $out_dir/dwi.bvec
 
 
 else
