@@ -64,6 +64,8 @@ atlas_space=MNI152_1mm
 #atlas_label_csv=dosenbach/dos160_roi_atlas.csv
 
 nprobseeds=5000
+session_ID=* #For participant2 level (If --session is not defined, it will run on all sessions)
+threshold=0
 
 if [ "$#" -lt 3 ]
 then
@@ -101,6 +103,11 @@ then
  echo " participant2 (probtrack connectivity) options:"
  echo ""
  echo "          [--nprobseeds N ] (for probtrackx, default: 5000) "
+ echo ""
+ echo "          [--matrices NAME (Additional matrices: FSL_FA, FSL_MD, DEK_FA, etc)"
+ echo "          [--session NAME (Session name: Baseline, Month12, etc. By default it will generate matrices for all sessions)"
+ echo "          [--threshold N (Threshold: Threshold valuve to mask the images to generate matrices)"
+ echo ""
  echo "      Choose built-in atlas:"
  echo "          [--atlas NAME ] (default: dosenbach)"
  echo ""
@@ -295,6 +302,56 @@ while :; do
          die 'error: "--atlas" requires a non-empty option argument.'
           ;;
 
+
+
+      --matrices )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                matrix=$2
+                  shift
+	      else
+              die 'error: "--matrices" requires an existing nifty file inside prepdwi. ex: FA or MD.'
+            fi
+              ;;
+     --matrices=?*)
+          matrix=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --matrices=)         # handle the case of an empty --matrices=
+         die 'error: "--matrices" requires a non-empty option argument.'
+          ;;
+
+
+
+      --session )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                session_ID=$2
+                  shift
+	      else
+              die 'error: "--session" requires an existing session name.'
+            fi
+              ;;
+     --session=?*)
+          session_ID=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --session=)         # handle the case of an empty --session=
+         die 'error: "--session" requires a non-empty option argument.'
+          ;;
+
+
+
+      --threshold )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                threshold=$2
+                  shift
+	      else
+              die 'error: "--session" requires an existing session name.'
+            fi
+              ;;
+     --threshold=?*)
+          session_ID=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --threshold=)         # handle the case of an empty --threshold=
+         die 'error: "--session" requires a non-empty option argument.'
+          ;;
 
       
       --atlas_label_nii )       # takes an option argument; ensure it has been specified.
@@ -1236,7 +1293,8 @@ elif [ "$analysis_level" = "group" ]
       subj=`fixsubj $subj`
 
       #loop over sub- and sub-/ses-
-    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-*/dwi 2> /dev/null`
+
+    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-${session_ID}/dwi 2> /dev/null`
     do
 
         subj_sess_dir=${subjfolder%/dwi}
@@ -1261,8 +1319,8 @@ elif [ "$analysis_level" = "group" ]
         continue
       fi
 
-     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
-     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $subj_sess_prefix
+     echo $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $threshold $subj_sess_prefix
+     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $threshold $subj_sess_prefix
 
  done #subjsess
   done #subj
