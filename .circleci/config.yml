@@ -53,6 +53,7 @@ jobs:
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_proc-FSL_V1.nii.gz
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_brainmask.nii.gz
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_bval-1000_avgDWI.nii.gz
+      - run:
           name: Running DWI singleshell participant2 level test
           command: |
               export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
@@ -61,7 +62,7 @@ jobs:
               #with participant incl. bedpost run already
               wget -qO- https://www.dropbox.com/s/14u7b9tytfekhcb/dwi_singleshell_with_prepdwi_v0.0.11_bedpost.tar  | tar xv -C dwi_singleshell
               #make dummy container for volume mounts, then copy bids and out to it
-              docker create -v /bids /out --name testdata alpine:3.4 /bin/true
+              docker create -v /bids -v /out --name testdata alpine:3.4 /bin/true
               docker cp dwi_singleshell/bids testdata:/bids
               docker cp dwi_singleshell/prepdwi_v0.0.11 testdata:/out
               #run the bids app
