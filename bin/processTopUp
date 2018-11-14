@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # dependencies: octave, getDiffPhaseEncodeLine.m (from vasst-dev)
-#		 fsl (bet, topup, dtifit, ...)
+#		 fsl (topup, dtifit, ...)
+#		 mrtrix (dwi2mask)
 # precondition:  importBlippedDWI
 
 if [ "$#" -lt 1 ]
@@ -187,10 +188,8 @@ cp -v ${in_bval[$N]} $bval
 
 fi
 
-echo bet $dwi $brainmask -f 0.1
-bet $dwi $brainmask -f 0.1
-echo fslmaths $brainmask -bin $brainmask
-fslmaths $brainmask -bin $brainmask
+echo dwi2mask -fslgrad ${bvec} ${bval} ${dwi} $brainmask
+dwi2mask -fslgrad ${bvec} ${bval} ${dwi} $brainmask
 
 echo dtifit -k $dwi -o $distort_dir/dti -m $brainmask -r $bvec -b $bval
 dtifit -k $dwi -o $distort_dir/dti -m $brainmask -r $bvec -b $bval

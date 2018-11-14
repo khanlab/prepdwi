@@ -45,8 +45,8 @@ in_bval=$uncorr_dir/dwi_1.bval
 in_bvec=$uncorr_dir/dwi_1.bvec
 
 brainmask=$eddy_dir/brainmask.nii.gz
-echo bet $in_dwi $brainmask -f 0.1
-bet $in_dwi $brainmask -f 0.1
+echo dwi2mask -fslgrad ${in_bvec} ${in_bval} ${in_dwi} $brainmask
+dwi2mask -fslgrad ${in_bvec} ${in_bval} ${in_dwi} $brainmask
 
 petxt=$eddy_work/pedir.txt
 echo octave --eval "getDiffPhaseEncodeLine('${in_dwi}','$petxt')"
@@ -76,6 +76,11 @@ dwi_vol=$eddy_dir/dwi.nii.gz
 
 cp -v $dwi_bvec $eddy_dir/dwi.bvec
 cp -v $in_bval $eddy_dir/dwi.bval
+
+#update brainmask after eddy correction
+echo dwi2mask -fslgrad ${eddy_dir}/dwi.bvec ${eddy_dir}/dwi.bval ${dwi_vol} $brainmask
+dwi2mask -fslgrad ${eddy_dir}/dwi.bvec ${eddy_dir}/dwi.bval ${dwi_vol} $brainmask
+
 
 echo dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
 dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
