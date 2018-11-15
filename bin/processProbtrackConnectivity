@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#Use this three lines to activate block comments and type BEGINCOMMENT and ENDCOMMENT where necessary
-#[ -z $BASH ] || shopt -s expand_aliases
-#alias BEGINCOMMENT="if [ ]; then"
-#alias ENDCOMMENT="fi"
 
 execpath=`dirname $0`
 execpath=`realpath $execpath`
@@ -16,7 +12,6 @@ function usage {
  echo "Usage $0 <in_bedpost_dir> <out_track_dir> <nprobseeds> <atlas_label_nii> <atlas_label_csv> <atlas_space> <ncpus> <out_connectivity_csv> <additional_matrices> <subjid/list>"
 
 }
-
 
 if [ "$#" -lt 6 ]
 then
@@ -60,8 +55,6 @@ do
  
    atlas_label_name=${atlas_label_nii##*/}
    atlas_label_name=${atlas_label_name%%.nii*}
-
-#BEGINCOMMENT
 
    #If the participant 2 level was not run once
    if [ ! -e "$out_conn_csv" ];  
@@ -190,18 +183,12 @@ do
       cat $out_seed_track/avg_seeds_to_all_targets.csv >> $out_conn_csv
    done
 
-
-    
-
-    
-#ENDCOMMENT
 else
 	echo "Skipping the connectivity matrix generation assuming it is already completed. If you want to re run participation 2 elevel again, please delete the connectivity.csv file in the prepdwi folder and re run participant 2 level "
 
 	echo "Unzipping the $in_bedpost_root/$subj/fdt_${atlas_label_name}.tar.gz file from the previous run and moving it to the $scratch_dir/$subj/ directory"
 	pushd $in_bedpost_root/$subj	
-	tar -xvzf fdt_${atlas_label_name}.tar.gz
-	#tar -xvzf $in_bedpost_root/$subj/fdt_${atlas_label_name}.tar.gz 
+	tar -xvzf fdt_${atlas_label_name}.tar.gz 
 	sleep 2
 	popd
 	mkdir -p $scratch_dir/$subj/fdt_${atlas_label_name}
@@ -235,19 +222,27 @@ fi
    csv_files=../prepdwi/$subject_dir/$session_dir/dwi/*${matrix}_to_all_targets.csv
    if [[ $( ls -A $csv_files ) ]];  
      then
-	echo "Deleting old csv files."
+	echo "Deleting old matrix files."
 	rm -rf ../prepdwi/$subject_dir/$session_dir/dwi/*${matrix}_to_all_targets.csv
+     else
+	echo "There are no existing matrices. Let's create them!"
    fi
 
 
-   #Adding the header to the csv files
-   echo $labellist2 >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
-   echo $labellist2 >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+   #Adding the header to the csv files and and aslo reading the FA/MD nifty file
+   if [ ! -e "../prepdwi/$subject_dir/$session_dir" ];  #check if a session folder exists
+     then
+	echo $labellist2 >> ../prepdwi/$subject_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
+	echo $labellist2 >> ../prepdwi/$subject_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+	image=../prepdwi/$subject_dir/dwi/*$matrix.nii.gz
+     else
+  	echo $labellist2 >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
+   	echo $labellist2 >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+	image=../prepdwi/$subject_dir/$session_dir/dwi/*$matrix.nii.gz
+    fi
 
    echo "Reading $matrix file and masking it with each connectivity. This will take around an hour to generate the matrices. You can check the progress in the csv files in the prepdwi folder. "
-   for images in $(ls ../prepdwi/$subject_dir/$session_dir/dwi/*$matrix.nii.gz) #Reads through all the FA/MD(or specified) images.
-   do
-
+	
    	#labellist=""
    	for line in `cat $atlas_label_csv`
   	do
@@ -268,7 +263,7 @@ fi
 			index=${index%%.*}
 			thresh=$threshold
 			fslmaths $nifties -thr $thresh $scratch_dir/$subj/fdt_${atlas_label_name}/$connect_nifty/$name.nii.gz  #Threshoding 
-			fslmaths $images -mas $scratch_dir/$subj/fdt_${atlas_label_name}/$connect_nifty/$name.nii.gz $scratch_dir/$subj/fdt_${atlas_label_name}/$connect_nifty/$name.nii.gz  #Masking with the image
+			fslmaths $image -mas $scratch_dir/$subj/fdt_${atlas_label_name}/$connect_nifty/$name.nii.gz $scratch_dir/$subj/fdt_${atlas_label_name}/$connect_nifty/$name.nii.gz  #Masking with the image
 
 			if [ "$index" == "$index_pad" ]; then
 				mean_val=1
@@ -284,13 +279,21 @@ fi
 		
 		done
 	
-	echo $mean_matrix_line >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
-	echo $max_matrix_line >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+
+
+   	if [ ! -e "../prepdwi/$subject_dir/$session_dir" ];  
+     		then
+			echo $mean_matrix_line >> ../prepdwi/$subject_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
+			echo $max_matrix_line >> ../prepdwi/$subject_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+		else
+			echo $mean_matrix_line >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_mean_${matrix}_to_all_targets.csv
+			echo $max_matrix_line >> ../prepdwi/$subject_dir/$session_dir/dwi/${subj}_${atlas_label_name}_max_${matrix}_to_all_targets.csv
+	fi
 	
     	done
 	
 	echo $matrix generation is completed.
-   done
+   #done
 
 rm $scratch_dir
 
