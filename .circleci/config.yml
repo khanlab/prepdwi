@@ -60,7 +60,7 @@ jobs:
               mkdir dwi_singleshell2
               #get and extract tarfile,tar includes two folders: bids/ prepdwi_v0.0.11/
               #with participant incl. bedpost run already
-              wget -qO- https://www.dropbox.com/s/14u7b9tytfekhcb/dwi_singleshell_with_prepdwi_v0.0.11_bedpost.tar  | tar xv -C dwi_singleshell2
+              wget -qO- https://www.dropbox.com/s/fgk0l0mwlwfjifd/dwi_singleshell_with_prepdwi_bedpost.tar.gz  | tar xv -C dwi_singleshell2
               #make dummy container for volume mounts, then copy bids and out to it
               docker create -v /bids -v /out --name testdata2 alpine:3.4 /bin/true
               docker cp dwi_singleshell2/bids testdata2:/bids
