@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#this config only uses 5 regions, used for circleci testing only..
+
+atlas_space=MNI152_1mm
+atlas_label_nii=dosenbach/dos160_roi_atlas.nii.gz
+atlas_label_csv=dosenbach/dos160_label_index.testingonly.csv

@@ -66,7 +66,7 @@ jobs:
               docker cp dwi_singleshell2/bids testdata2:/bids
               docker cp dwi_singleshell2/prepdwi_v0.0.11 testdata2:/out
               #run the bids app
-              docker run --name testapp2 -it --volumes-from testdata2 $DOCKER_NAME /bids/bids /out/prepdwi_v0.0.11 participant2 --nprobseeds 1 --matrices FSL_FA
+              docker run --name testapp2 -it --volumes-from testdata2 $DOCKER_NAME /bids/bids /out/prepdwi_v0.0.11 participant2 --nprobseeds 1 --matrices FSL_FA --atlas dosenbach_testingonly
               #copy output data from bids app container to our workspace
               docker cp testapp2:/out dwi_singleshell2_out
               #put tests here:
