@@ -295,8 +295,6 @@ fi
 	echo $matrix generation is completed.
    #done
 
-rm $scratch_dir
-
 echo "Compressing the $scratch_dir/$subj/fdt_${atlas_label_name} and deleting the original folder"
 pushd $scratch_dir/$subj
 tar -czf $in_bedpost_root/$subj/fdt_${atlas_label_name}.tar.gz fdt_${atlas_label_name}
