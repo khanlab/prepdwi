@@ -504,12 +504,18 @@ else
 subjlist=`tail -n +2 $participants | awk '{print $1}'`
 fi
 
-if [ -e $execpath/cfg/$atlas ]
+
+if [ -e $atlas ]
 then
+  echo "sourcing external atlas config: $atlas"
+  source $atlas
+elif [ -e $execpath/cfg/$atlas ]
+then
+  echo "sourcing internal atlas config: $atlas"
   source $execpath/cfg/$atlas
-  else
-   echo "atlas config file $execpath/cfg/$atlas does not exist!"
-   exit 1
+else
+  echo "atlas config file $execpath/cfg/$atlas does not exist!"
+  exit 1
 fi
 
 
