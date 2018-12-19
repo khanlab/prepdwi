@@ -156,8 +156,8 @@ grad_dev_prefix=$work/grad_dev
 if [ "$do_regT1" = 1 ]
  then
 
-    echo vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
-    vecreg -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
+    echo vecreg_5.0.11 -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
+    vecreg_5.0.11 -i $grad_dev -o $out_dwi_grad_dev  -r $b0_t1_ref  -t $xfm_b0_t1 --interp=spline
 else
     cp -v $grad_dev $out_dwi_grad_dev
 
