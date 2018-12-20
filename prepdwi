@@ -142,7 +142,7 @@ while :; do
       case $1 in
      -h|-\?|--help)
 	     usage
-            exit
+            exit 1
               ;;
     --no-denoise )
 	nodenoise=1;;
@@ -751,6 +751,12 @@ fi #N_t1w=0
         echo "--- $thisstep already run ---"
     fi
 
+ if [ ! -e $thisproduces ]
+ then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+ fi
+
  prevstep=${thisstep}
 
 
@@ -778,7 +784,14 @@ fi #N_t1w=0
 
         echo "--- $thisstep already run ---"
     fi
-     
+  
+  if [ ! -e $thisproduces ]
+ then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+ fi
+
+   
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -808,6 +821,14 @@ fi #N_t1w=0
 
         echo "--- $thisstep already run ---"
     fi
+
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -841,6 +862,12 @@ fi
     else
 
         echo "--- $thisstep already run ---"
+    fi
+
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
     fi
 
     prevstep=${prevstep}_${thisstep}
@@ -878,7 +905,14 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
 	    echo "--- $thisstep (no topup) already run ---"
     fi
-     
+ 
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+    
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -913,7 +947,14 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
         echo "--- $thisstep already run ---"
     fi
-     
+ 
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+    
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -948,6 +989,13 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     else
         echo "--- $thisstep already run ---"
     fi
+
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -977,7 +1025,14 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
         echo "--- $thisstep already run ---"
     fi
-     
+ 
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+    
     prevstep=${prevstep}_${thisstep}
 
     echo "Setting symlink for regT1 preprocessed dwi work dir"
@@ -1010,7 +1065,14 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
         echo "--- $thisstep already run ---"
     fi
-     
+ 
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+    
     prevstep=${prevstep}_${thisstep}
 
  fi #if thisdisable
@@ -1097,6 +1159,13 @@ done
         echo "--- $thisstep already run ---"
     fi
 
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+
  fi #if thisdisable
 
 #========================================================================
@@ -1125,6 +1194,13 @@ fi
     else
         echo "--- $thisstep already run ---"
     fi
+
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
 
  fi #if thisdisable
 
