@@ -729,12 +729,13 @@ fi #N_t1w=0
 # import
 #========================================================================
 
+ Ndwi=`eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi} | wc -l`
+
  #thisdisable not defined since import step cannot be skipped 
  thisstep=uncorrected
  thisproduces=$subj_sess_prefix/dwi/${thisstep}/dwi_$Ndwi.nii.gz
 
 
- Ndwi=`eval ls $in_bids/$subj_sess_dir/dwi/${subj_sess_prefix}${searchstring_dwi} | wc -l`
 
     if [ ! -e $thisproduces ]
     then
