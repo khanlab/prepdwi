@@ -27,6 +27,8 @@ sess=$1
 
 
 
+
+
 execpath=`dirname $0`
 execpath=`realpath $execpath`
 
@@ -536,7 +538,15 @@ do
 #	fi
 # fi
 
- ln -sfv $atlas_dir $work_folder/$atlas_name
+# ln -sfv $atlas_dir $work_folder/$atlas_name
+
+#instead of making symlink, copy from container
+if [ -e $work_folder/$atlas_name ]
+then
+cp -Rv $atlas_dir/* $work_folder/$atlas_name
+else
+cp -Rv $atlas_dir $work_folder/$atlas_name
+fi
 
 done
 
