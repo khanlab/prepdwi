@@ -19,6 +19,9 @@ then
     exit 1
 fi
 
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
 output_dir=`pwd`
 in_bedpost_root=$1
 out_name=$2
