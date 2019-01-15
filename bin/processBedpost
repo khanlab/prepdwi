@@ -78,6 +78,8 @@ bedpostx-parallel  $bedpost_data/ -c -P $n_cpus $gradopt
 
  #remove unneeded diff_slice files:
  rm -rf $bedpost_data.bedpostX/diff_slices
+ #also remove unneeded log files
+ rm -rf $bedpost_data.bedpostX/logs
 
 
     if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
