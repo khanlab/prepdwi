@@ -127,11 +127,7 @@ mkdir -p $out_bedpost_root
 
 if [ -e $in_bedpost ]
 then
- #added check to avoid putting new link into the linked dir
- if [ ! -e  $out_bedpost_dir ]
- then
- ln -srfv $in_bedpost $out_bedpost_dir
- fi
+ ln -srfvn $in_bedpost $out_bedpost_dir
 fi
 
 in_dke=${dwi_dir}_dke

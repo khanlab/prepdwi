@@ -526,21 +526,13 @@ for atlas_dir in `ls -d $in_atlas_dir/*`
 do
  atlas_name=${atlas_dir##*/}
 
+#first, for backwards compatibility, if it is a symlink, then remove it first
+if [[ -L "$work_folder/$atlas_name" && -e "$work_folder/$atlas_name" ]]
+then
+  rm -f $work_folder/$atlas_name
+fi
 
-# don't clear out atlas folder, as other parallel runs may be using it:
-
-# if [ -e $work_folder/$atlas_name ]
-# then
-#	 if [ -n "$work_folder" -a -n "$atlas_name" ]
-#	 then
-#		echo clearing existing atlas folder
-#		rm -rf $work_folder/$atlas_name
-#	fi
-# fi
-
-# ln -sfv $atlas_dir $work_folder/$atlas_name
-
-#instead of making symlink, copy from container
+#if the directory exists already, then copy into it
 if [ -e $work_folder/$atlas_name ]
 then
 cp -Rv $atlas_dir/* $work_folder/$atlas_name
@@ -1047,7 +1039,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
     prevstep=${prevstep}_${thisstep}
 
     echo "Setting symlink for regT1 preprocessed dwi work dir"
-    ln -srfv $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/proc_regT1
+    ln -srfvn $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/proc_regT1
 
  fi #if thisdisable
 
@@ -1095,7 +1087,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
 processed=$prevstep
 echo "Setting symlink for final preprocessed dwi work dir"
-ln -srfv $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/processed
+ln -srfvn $subj_sess_prefix/dwi/$prevstep $subj_sess_prefix/dwi/processed
 
 #========================================================================
 
