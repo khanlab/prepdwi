@@ -1050,7 +1050,7 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
  thisdisable=$nogradcorr
  thisstep=gradCorr
- thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
  if [ "$thisdisable" = "1" ]
  then
