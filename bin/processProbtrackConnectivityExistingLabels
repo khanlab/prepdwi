@@ -1,0 +1,174 @@
+#!/bin/bash
+
+execpath=`dirname $0`
+execpath=`realpath $execpath`
+
+#dependencies: fsl bedpostx
+#precondition: 
+
+function usage {
+ echo "Writes output to dwi/<in_dwi_name>/bedpost.bedpostX/probtrack"
+ echo "Usage $0 <in_bedpost_dir> <out_track_dir> <nprobseeds> <subject_label_nii> <subject_label_csv> <subject_label_name> <ncpus> <out_connectivity_csv> <subjid/list>"
+
+}
+
+if [ "$#" -lt 6 ]
+then
+    usage
+    exit 1
+fi
+
+
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+
+
+
+output_dir=`pwd`
+in_bedpost_root=$1
+out_name=$2
+nprobseeds=$3
+subject_label_nii=$4
+subject_label_csv=$5
+subject_label_name=$6
+ncpus=$7
+out_conn_csv=$8
+threshold=$9
+shift 9
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+t1_img_type=t1/t1.brain.inorm.nii.gz
+
+#comment these two tines when running in graham. This is just to test in a local machine.	
+#mkdir -p test_dir/
+#scratch_dir=test_dir
+
+for subj in $subjids
+do
+
+
+    echo subj $subj
+  #import subject_label_nii file  -> imports to labelgroup "imported"
+     #or:  
+   #existing label-group and nii filename
+ 
+
+
+    bedpost_dir=$in_bedpost_root/$subj
+   echo "bedpost_dir: $bedpost_dir"
+
+
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
+    then
+       out_track_dir=$scratch_dir/$subj/$out_name
+   else
+   out_track_dir=$in_bedpost_root/$subj/$out_name
+   fi
+
+   echo mkdir -p $out_track_dir
+   mkdir -p $out_track_dir
+
+
+
+   mask_file=$bedpost_dir/nodif_brain_mask.nii.gz
+   echo "mask_file: $mask_file"
+
+   
+   targets_all_txt=$out_track_dir/targets.txt
+   mkdir -p $out_track_dir/targets
+   rm -f $targets_all_txt
+
+
+
+   for line in `cat $subject_label_csv`
+   do
+       label=${line%,*}
+       index=${line##*,}
+      
+       index_pad=`printf  %03d $index`
+       extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
+       echo fslmaths $subject_label_nii -thr $index -uthr $index $extracted
+       fslmaths $subject_label_nii -thr $index -uthr $index $extracted
+
+       realpath $extracted >> $targets_all_txt
+
+       #resample to dwi space  -- not needed??
+       echo reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
+       reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
+    done
+
+
+   run_file=$out_track_dir/probtrack.cmd
+   rm -f $run_file
+
+   labellist=""
+   for line in `cat $subject_label_csv`
+   do
+       label=${line%,*}
+       index=${line##*,}
+      
+       if [ "$labellist" = "" ]
+       then
+        labellist=$label
+       else 
+         labellist="$labellist,$label"
+       fi
+
+       index_pad=`printf  %03d $index`
+       extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
+
+       out_seed_track=$out_track_dir/$index_pad.$label
+       mkdir -p $out_seed_track
+
+       seed_txt=$out_seed_track/seeds.txt
+
+       realpath $extracted > $seed_txt
+
+   
+     samples_base=$bedpost_dir/merged
+     probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd"
+     echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_all_txt -m $mask_file -s $samples_base --dir=$out_seed_track $probtrack_opts --os2t --s2tastext  >>  $run_file
+     
+     done  #seed
+
+    parallel --progress -j $ncpus < $run_file
+
+
+    #now, need to 1) average over rows for matrix_seeds_to_all_targets in each seed dir, then concatenate all together
+
+    echo $labellist > $out_conn_csv
+
+    out_matrix=$
+    for line in `cat $subject_label_csv`
+    do
+       label=${line%,*}
+       index=${line##*,}
+      
+       index_pad=`printf  %03d $index`
+
+       out_seed_track=$out_track_dir/$index_pad.$label
+
+       #reduce all seeds to a single row by averaging
+      echo octave --eval "dlmwrite('$out_seed_track/avg_seeds_to_all_targets.csv',mean(importdata('$out_seed_track/matrix_seeds_to_all_targets')./$nprobseeds,1))"
+      octave --eval "dlmwrite('$out_seed_track/avg_seeds_to_all_targets.csv',mean(importdata('$out_seed_track/matrix_seeds_to_all_targets')./$nprobseeds,1))"
+      
+      cat $out_seed_track/avg_seeds_to_all_targets.csv >> $out_conn_csv
+   done
+
+
+
+
+    if [ -n "$scratch_dir" ] #if running on compute cluster, use scratch dir
+    then
+        pushd $scratch_dir/$subj
+        echo "backing up scratch folder to $in_bedpost_root/$subj/$out_name.tar"
+        tar -cf $in_bedpost_root/$subj/$out_name.tar $out_name
+        popd
+    fi
+done

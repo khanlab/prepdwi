@@ -35,6 +35,12 @@ execpath=`realpath $execpath`
 in_brainmask_dir=
 
 
+subject_label_dir=
+subject_label_match=
+subject_label_csv=
+subject_label_name=
+
+
 in_atlas_dir=$execpath/atlases
 
 matching_dwi=
@@ -102,13 +108,13 @@ then
  echo "          [--no-bedpost]"
  echo ""
  echo ""
- echo " participant2 (probtrack connectivity) options:"
+ echo " participant2 (probtrack connectivity with atlas-space labels) options:"
  echo ""
  echo "          [--nprobseeds N ] (for probtrackx, default: 5000) "
  echo ""
  echo "          [--matrices NAME (Additional matrices: FSL_FA, FSL_MD, DEK_FA, etc)"
  echo "          [--session NAME (Session name: Baseline, Month12, etc. By default it will generate matrices for all sessions)"
- echo "          [--threshold N (Threshold: Threshold valuve to mask the images to generate matrices)"
+ echo "          [--threshold N (Threshold: Threshold value to mask the images to generate matrices)"
  echo ""
  echo "      Choose built-in atlas:"
  echo "          [--atlas NAME ] (default: dosenbach)"
@@ -123,6 +129,21 @@ popd > /dev/null
  echo "          {--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)"
  echo "          [--atlas_label_nii NIFTI" 
  echo "          [--atlas_label_csv LABEL_INDEX_CSV"
+ echo ""
+ echo " participant3 (probtrack connectivity with imported subject T1w-space labels) options:"
+ echo ""
+ echo "      Required:"
+ echo "          [--subject_label_name NAME]  (shorthand name for output files, e.g.: freesurfer)"
+ echo "          [--subject_label_dir SUBJ_LABEL_DIR]  (root folder containing paths to labels in subj T1w space, e.g.: mybids/derivatives/freesurfer"
+ echo "          [--subject_label_match MATCHING_STRING]  (string to identify subject label file (assumed nii.gz), e.g.:  aparc+aseg)"
+ echo "          [--subject_label_csv LABEL_INDEX_CSV]  (csv file with name,number for each ROI to include, e.g.: )"
+ echo ""
+ echo "      Optional:"
+ echo "          [--nprobseeds N ] (for probtrackx, default: 5000) "
+ echo ""
+ echo "          [--matrices NAME (Additional matrices: FSL_FA, FSL_MD, DEK_FA, etc)"
+ echo "          [--session NAME (Session name: Baseline, Month12, etc. By default it will generate matrices for all sessions)"
+ echo "          [--threshold N (Threshold: Threshold value to mask the images to generate matrices)"
  echo ""
 
  exit 1
@@ -403,6 +424,67 @@ while :; do
          die 'error: "--atlas_space" requires a non-empty option argument.'
           ;;
 
+      --subject_label_dir )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                subject_label_dir=$2
+                  shift
+	      else
+              die 'error: "--subject_label_dir" requires a non-empty option argument.'
+            fi
+              ;;
+     --subject_label_dir=?*)
+          subject_label_dir=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --subject_label_dir=)         # handle the case of an empty --participant=
+         die 'error: "--subject_label_dir" requires a non-empty option argument.'
+          ;;
+
+     --subject_label_match )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                subject_label_match=$2
+                  shift
+	      else
+              die 'error: "--subject_label_match" requires a non-empty option argument.'
+            fi
+              ;;
+     --subject_label_match=?*)
+          subject_label_match=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --subject_label_match=)         # handle the case of an empty --participant=
+         die 'error: "--subject_label_match" requires a non-empty option argument.'
+          ;;
+
+      --subject_label_csv )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                subject_label_csv=$2
+                  shift
+	      else
+              die 'error: "--subject_label_csv" requires a non-empty option argument.'
+            fi
+              ;;
+     --subject_label_csv=?*)
+          subject_label_csv=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --subject_label_csv=)         # handle the case of an empty --participant=
+         die 'error: "--subject_label_csv" requires a non-empty option argument.'
+          ;;
+
+      --subject_label_name )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                subject_label_name=$2
+                  shift
+	      else
+              die 'error: "--subject_label_name" requires a non-empty option argument.'
+            fi
+              ;;
+     --subject_label_name=?*)
+          subject_label_name=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --subject_label_name=)         # handle the case of an empty --participant=
+         die 'error: "--subject_label_name" requires a non-empty option argument.'
+          ;;
+
+
      --nprobseeds )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 nprobseeds=$2
@@ -520,6 +602,8 @@ else
   exit 1
 fi
 
+if [ ! "$analysis_level" = "participant3" ]
+then
 
 #use symlinks instead of copying 
 for atlas_dir in `ls -d $in_atlas_dir/*`
@@ -535,13 +619,15 @@ fi
 #if the directory exists already, then copy into it
 if [ -e $work_folder/$atlas_name ]
 then
-cp -Rv $atlas_dir/* $work_folder/$atlas_name
+echo "Copying $atlas_name to existing atlas work folder:"
+cp -R $atlas_dir/* $work_folder/$atlas_name
 else
-cp -Rv $atlas_dir $work_folder/$atlas_name
+echo "Copying $atlas_name to new atlas work folder:"
+cp -R $atlas_dir $work_folder/$atlas_name
 fi
 
 done
-
+fi
 
 #=====================================================================
 #--------------------- BEGIN STAGE:  participant  --------------------
@@ -1416,6 +1502,139 @@ elif [ "$analysis_level" = "group" ]
 #=====================================================================
 #------------------- END STAGE:  participant2 ------------------------
 #=====================================================================
+
+
+ elif [ "$analysis_level" = "participant3" ]
+ then
+
+
+
+
+if [ -n "$subject_label_dir" ]
+then
+
+ if [ ! -e $subject_label_dir ]
+ then
+    echo "Input subject label root dir $subject_label_dir does not exist! exiting.."
+    exit 1
+ fi
+
+ subject_label_dir=`realpath $subject_label_dir`
+
+else
+
+  echo "Required argument for participant3 stage: --subject_label_dir, exiting!" 
+  exit 1
+
+fi
+
+
+
+if [ ! -n "$subject_label_match" ]
+then
+
+  echo "Required argument for participant3 stage: --subject_label_match, exiting!" 
+  exit 1
+
+fi
+
+if [ ! -n "$subject_label_name" ]
+then
+
+  echo "Required argument for participant3 stage: --subject_label_name, exiting!" 
+  exit 1
+
+fi
+
+
+if [ -n "$subject_label_csv" ]
+then
+
+ if [ ! -e $subject_label_csv ]
+ then
+    echo "Input subject_label_csv $subject_label_csv does not exist! exiting.."
+    exit 1
+ fi
+
+ subject_label_csv=`realpath $subject_label_csv`
+
+else
+
+
+  echo "Required argument for participant3 stage: --subject_label_csv, exiting!" 
+  exit 1
+
+fi
+
+
+
+
+
+
+
+
+ #network connectivity matrix
+ echo --- Running stage participant3:  connectivity analysis using existing subject-space labels ---
+
+
+ #need to specify input folder 
+ pushd $work_folder
+  for subj in $subjlist 
+  do
+      #add on sub- if not exists
+      subj=`fixsubj $subj`
+
+      #loop over sub- and sub-/ses-
+
+    for subjfolder in `ls -d $in_bids/$subj/dwi $in_bids/$subj/ses-${session_ID}/dwi 2> /dev/null`
+    do
+
+        subj_sess_dir=${subjfolder%/dwi}
+        subj_sess_dir=${subj_sess_dir##$in_bids/}
+        if echo $subj_sess_dir | grep -q '/'
+        then
+            sess=${subj_sess_dir##*/}
+            subj_sess_prefix=${subj}_${sess}
+        else
+            subj_sess_prefix=${subj}
+        fi
+        echo subjfolder $subjfolder
+        echo subj_sess_dir $subj_sess_dir
+        echo sess $sess
+        echo subj_sess_prefix $subj_sess_prefix
+
+
+
+
+     #check if bedpost results exist
+      if [ ! -e $derivatives/bedpost/$subj_sess_prefix/dyads1.nii.gz ]
+      then
+        echo "Bedpost processing in $derivatives/bedpost/$subj_sess_prefix not complete, skipping ..."
+        continue
+      fi
+
+
+      #get path to subject_label_nii file -- works with either: sub-XX/ses-XX/*/*match*  or sub-XX_ses-XX/*/*match*  
+      #                                                     or  sub-XX/ses-XX/*match*  or sub-XX_ses-XX/*match*  
+
+      subject_label_nii=`ls ${subject_label_dir}/${subj_sess_dir}/*/${subj_sess_prefix}*${subject_label_match}*.nii.gz ${subject_label_dir}/${subject_label_prefix}/${subj_sess_dir}/*/${subj_sess_prefix}*${subject_label_match}*.nii.gz ${subject_label_dir}/${subj_sess_dir}/${subj_sess_prefix}*${subject_label_match}*.nii.gz ${subject_label_dir}/${subject_label_prefix}/${subj_sess_dir}/${subj_sess_prefix}*${subject_label_match}*.nii.gz 2> /dev/null | head -n 1`
+
+
+      echo "matching subject_label_nii=$subject_label_nii"
+
+#     $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $threshold $subj_sess_prefix
+       $execpath/bin/processProbtrackConnectivityExistingLabels  $derivatives/bedpost probtrack.subjlabels $nprobseeds $subject_label_nii $subject_label_csv ${subject_label_name} $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_labels-${subject_label_name}_connectivity.csv $threshold $subj_sess_prefix
+
+ done #subjsess
+  done #subj
+
+
+   popd
+
+#=====================================================================
+#------------------- END STAGE:  participant3 ------------------------
+#=====================================================================
+
 
 
 
