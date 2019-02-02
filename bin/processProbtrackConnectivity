@@ -39,8 +39,6 @@ subj=${12}
 #get name of _FA.csv matrix from the connectivity matrix name
 out_matrix_mean_csv=${out_conn_csv%_*.csv}_stat-mean_${matrix}.csv
 out_matrix_max_csv=${out_conn_csv%_*.csv}_stat-max_${matrix}.csv
-echo out_matrix_mean_csv $out_matrix_mean_csv
-echo out_matrix_max_csv $out_matrix_max_csv
 
 if [ ! -e $out_conn_csv -o ! -e $out_matrix_mean_csv -o ! -e $out_matrix_max_csv ]
 then
@@ -74,10 +72,8 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
 
 
    mkdir -p $atlas_space/labels/t1/imported
-   echo "copying $atlas_label_nii $atlas_space/labels/t1/imported"
    cp -v $atlas_label_nii $atlas_space/labels/t1/imported
 
-    echo $execpath/propLabels_reg_bspline_f3d t1 $t1_img_type imported $atlas_space $subj
     $execpath/propLabels_reg_bspline_f3d t1 $t1_img_type imported $atlas_space $subj
 
    atlas_t1=$subj/labels/t1/imported_bspline_f3d_${atlas_space}/${atlas_label_name}.nii.gz
@@ -99,13 +95,11 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
       
        index_pad=`printf  %03d $index`
        extracted=$out_track_dir/targets/$index_pad.$label.nii.gz
-       echo fslmaths $atlas_t1 -thr $index -uthr $index $extracted
        fslmaths $atlas_t1 -thr $index -uthr $index $extracted
 
        realpath $extracted >> $targets_all_txt
 
        #resample to dwi space  -- not needed??
-       echo reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
        reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
     done
 
@@ -202,7 +196,6 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
    echo $labellist > $out_matrix_max_csv
   
    
-   echo "Reading $matrix file and masking it with each connectivity. This will take around an hour to generate the matrices. You can check the progress in the csv files in the prepdwi folder. "
 	
    	#labellist=""
    	for line in `cat $atlas_label_csv`
@@ -216,25 +209,29 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
 
 		mean_matrix_line=""
 		max_matrix_line=""
-		echo "looping over all nifti files:  " 
-		ls $out_seed_track/*/*.nii.gz
 		for nifties in $(ls $out_seed_track/*/*.nii.gz) 
 		do
 			name=${nifties##*/}
 			index=${name##*_}
 			index=${index%%.*}
 			th_img=$out_seed_track/$name.nii.gz
-			echo fslmaths $nifties -div $nprobseeds -thr $threshold $th_img 
 			fslmaths $nifties -div $nprobseeds -thr $threshold $th_img 
-			echo fslmaths $matrix_nii -mas $th_img $th_img #Masking with the image
-			fslmaths $matrix_nii -mas $th_img $th_img #Masking with the image
+			nmaskvoxels=$(fslstats $th_img -V | awk '{print $1}')
+			if [ "$nmaskvoxels" = "0" ]
+			then
+				mean_val=-1
+				max_val=-1
+			else
 
+			fslmaths $matrix_nii -mas $th_img $th_img #Masking with the image
+			
 			if [ "$index" == "$index_pad" ]; then
 				mean_val=1
-				Max_val=1
+				max_val=1
 			else
 			mean_val=$(fslstats $th_img -M | awk '{print $1}')  #Gets the non zero mean 
 			max_val=$(fslstats $th_img -R | awk '{print $2}')   #Gets the maximum value and the min
+			fi
 			fi
 
 			mean_matrix_line=${mean_matrix_line}${mean_val},

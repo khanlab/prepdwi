@@ -74,7 +74,7 @@ atlas_space=MNI152_1mm
 nprobseeds=5000
 session_ID=* #For participant2 level (If --session is not defined, it will run on all sessions)
 matrix=FA #default, use FA
-threshold=0.1 # calculate FA in voxels with that at least 10% of streamline pass through
+threshold=0.01 # calculate FA in voxels with that at least 1% of streamline pass through
 
 if [ "$#" -lt 3 ]
 then
