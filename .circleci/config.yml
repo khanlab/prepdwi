@@ -32,10 +32,12 @@ jobs:
             apk add --update make wget
       - run: 
           name: Load docker image
+          no_output_timeout: 1h
           command: |
             docker load -i /tmp/workspace/docker_image.tar
       - run:
           name: Running DWI singleshell participant level test
+          no_output_timeout: 1h
           command: |
               export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
               mkdir dwi_singleshell
@@ -55,6 +57,7 @@ jobs:
               test -f dwi_singleshell_out/prepdwi/sub-001/dwi/sub-001_dwi_space-T1w_bval-1000_avgDWI.nii.gz
       - run:
           name: Running DWI singleshell participant2 level test
+          no_output_timeout: 1h
           command: |
               export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
               mkdir dwi_singleshell2
@@ -84,10 +87,12 @@ jobs:
           at: /tmp/workspace
       - run: 
           name: Load docker image
+          no_output_timeout: 1h
           command: |
             docker load -i /tmp/workspace/docker_image.tar
       - run:
           name: Pushing build to docker hub
+          no_output_timeout: 1h
           command: |
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
@@ -104,10 +109,12 @@ jobs:
           at: /tmp/workspace
       - run: 
           name: Load docker image
+          no_output_timeout: 1h
           command: |
             docker load -i /tmp/workspace/docker_image.tar
       - run:
           name: Pushing build to docker hub
+          no_output_timeout: 1h
           command: |
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
@@ -126,6 +133,7 @@ jobs:
       - setup_remote_docker            
       - run:
           name: Pushing latest to singularity hub 
+          no_output_timeout: 1h
           command: |
             sincecommit=$(git log -1 --date=unix --pretty=format:%cd)
             if [ ! -e Singularity ]; then sinceshub=0; else sinceshub=$(git log -1 --date=unix --pretty=format:%cd Singularity); fi
@@ -148,7 +156,8 @@ jobs:
       - checkout
       - setup_remote_docker            
       - run:
-          name: Pushing release to singularity hub 
+          name: Pushing release to singularity hub
+          no_output_timeout: 1h
           command: |
             export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
             git config --global user.email $GH_EMAIL
