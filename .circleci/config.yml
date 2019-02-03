@@ -66,15 +66,15 @@ jobs:
               docker cp dwi_singleshell2/bids testdata2:/bids
               docker cp dwi_singleshell2/prepdwi_v0.0.11 testdata2:/out
               #run the bids app
-              docker run --name testapp2 -it --volumes-from testdata2 $DOCKER_NAME /bids/bids /out/prepdwi_v0.0.11 participant2 --nprobseeds 1 --matrices FSL_FA --atlas dosenbach_testingonly
+              docker run --name testapp2 -it --volumes-from testdata2 $DOCKER_NAME /bids/bids /out/prepdwi_v0.0.11 participant2 --nprobseeds 1 --atlas dosenbach_testingonly
               #copy output data from bids app container to our workspace
               docker cp testapp2:/out dwi_singleshell2_out
               #put tests here:
               ls -l dwi_singleshell2_out/prepdwi_v0.0.11
-              #test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dwi_atlas-dosenbach_connectivity.csv  
-              test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dos160_roi_atlas_mean_FSL_FA_to_all_targets.csv
-              test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dos160_roi_atlas_max_FSL_FA_to_all_targets.csv
-              test -f dwi_singleshell2_out/prepdwi_v0.0.11/bedpost/sub-001/fdt_dos160_roi_atlas.tar.gz
+              test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dwi_atlas-dosenbach_testingonly_connectivity.csv  
+              test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dwi_atlas-dosenbach_testingonly_stat-mean_FA.csv
+              test -f dwi_singleshell2_out/prepdwi_v0.0.11/prepdwi/sub-001/dwi/sub-001_dwi_atlas-dosenbach_testingonly_stat-max_FA.csv
+              test -f dwi_singleshell2_out/prepdwi_v0.0.11/bedpost/sub-001/probtrack.dosenbach_testingonly.tar
               
              
   deploy_dev:
