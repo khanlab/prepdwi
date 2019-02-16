@@ -100,9 +100,9 @@ do
 
        #disabling resampling to DWI space -- need to test if this works still..
        
-       #resample to dwi space  -- not needed??
-#       echo reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
-#       reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
+       #resample to dwi space 
+       echo reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
+       reg_resample -flo $extracted -res $extracted -ref $mask_file -NN 0
     done
 
 
@@ -132,10 +132,8 @@ do
 
        realpath $extracted > $seed_txt
 
-       seedref=`realpath $extracted`
-
      samples_base=$bedpost_dir/merged
-     probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd --seedref=$seedref"
+     probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd"
      echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_all_txt -m $mask_file -s $samples_base --dir=$out_seed_track $probtrack_opts --os2t --s2tastext  >>  $run_file
      
      done  #seed
