@@ -33,6 +33,7 @@ execpath=`dirname $0`
 execpath=`realpath $execpath`
 
 in_brainmask_dir=
+in_fmriprep_dir=
 
 
 subject_label_dir=
@@ -92,6 +93,9 @@ then
  echo "          [--matching_T1w MATCHING_STRING] (for selecting T1w)"
  echo""
  echo "          [--in_brainmask_dir BRAINMASK_DIR]  (e.g. output folder from BEaST bids app)"
+ echo "          [--in_fmriprep_dir FMRIPREP_DIR]  (e.g. output folder from fmriprep bids app)"
+ echo "                                            (currently just grabs skull-stripped, intensity norm T1w from fmriprep)"
+ echo "                                            (requires fmriprep >= 1.3.2)"
  echo ""
  echo "          [--reg_init_participant sub-SUBJ --OR-- sub-SUBJ_ses-SES]"
  echo ""
@@ -301,6 +305,21 @@ while :; do
             ;;
           --in_brainmask_dir=)         # handle the case of an empty --participant=
          die 'error: "--in_brainmask_dir" requires a non-empty option argument.'
+          ;;
+
+      --in_fmriprep_dir )       # takes an option argument; ensure it has been specified.
+          if [ "$2" ]; then
+                in_fmriprep_dir=$2
+                  shift
+	      else
+              die 'error: "--in_fmriprep_dir" requires a non-empty option argument.'
+            fi
+              ;;
+     --in_fmriprep_dir=?*)
+          in_fmriprep_dir=${1#*=} # delete everything up to "=" and assign the remainder.
+            ;;
+          --in_fmriprep_dir=)         # handle the case of an empty --participant=
+         die 'error: "--in_fmriprep_dir" requires a non-empty option argument.'
           ;;
 
 
@@ -533,6 +552,27 @@ else
  custom_brainmask=0
 
 fi
+
+
+if [ -n "$in_fmriprep_dir" ]
+then
+
+ if [ ! -e $in_fmriprep_dir/fmriprep ]
+ then
+    echo "Input fmriprep dir $in_fmriprep_dir/fmriprep does not exist! exiting.."
+    exit 1
+ fi
+
+ in_fmriprep_dir=`realpath $in_fmriprep_dir/fmriprep`
+ in_brainmask_dir=$in_fmriprep_dir
+ custom_brainmask=1
+ searchstring_brainmask=*desc-preproc_T1w.nii.gz #skull-stripped intensity normalized T1w
+else
+ custom_brainmask=0
+
+fi
+
+
 
 
 
