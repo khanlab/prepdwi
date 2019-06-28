@@ -34,7 +34,8 @@ subject_label_name=$6
 ncpus=$7
 out_conn_csv=$8
 threshold=$9
-shift 9
+correct_pd=${10}
+shift 10
 
 if [ -f $1 ]
 then
@@ -134,6 +135,11 @@ do
 
      samples_base=$bedpost_dir/merged
      probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd"
+     if [ "$correct_pd" = 1 ]
+     then
+	     probtrack_opts="$probtrack_opts --pd"
+     fi
+     
      echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_all_txt -m $mask_file -s $samples_base --dir=$out_seed_track $probtrack_opts --os2t --s2tastext  >>  $run_file
      
      done  #seed

@@ -34,7 +34,8 @@ out_conn_csv=$8
 matrix=$9
 matrix_nii=${10}
 threshold=${11}
-subj=${12}
+correct_pd=${12}
+subj=${13}
 
 #get name of _FA.csv matrix from the connectivity matrix name
 out_matrix_mean_csv=${out_conn_csv%_*.csv}_stat-mean_${matrix}.csv
@@ -134,6 +135,11 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
    
      samples_base=$bedpost_dir/merged
      probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P $nprobseeds --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd --ompl"
+     if [ "$correct_pd" = 1 ]
+     then
+	     probtrack_opts="$probtrack_opts --pd"
+     fi
+ 
      echo probtrackx2 --seed=$seed_txt --targetmasks=$targets_all_txt -m $mask_file -s $samples_base --dir=$out_seed_track $probtrack_opts --os2t --s2tastext  >>  $run_file
 
 
@@ -158,6 +164,11 @@ t1_img_type=t1/t1.brain.inorm.nii.gz
 			mkdir -p $out_pathway_dir
 
 			probtrack_opts="-l --onewaycondition -c 0.2 -S 2000 --steplength=0.5 -P 200 --fibthresh=0.01 --distthresh=0.0  --sampvox=0.0 --forcedir --opd "
+			     if [ "$correct_pd" = 1 ]
+			     then
+				     probtrack_opts="$probtrack_opts --pd"
+			     fi
+ 
 			echo probtrackx2 --seed=$seed_points --waypoints=$target -m $mask_file -s $samples_base --dir=$out_pathway_dir --out=fdt_$roi.nii.gz $probtrack_opts >>  $run_file
 		done
  	 done

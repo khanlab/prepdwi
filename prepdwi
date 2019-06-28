@@ -63,6 +63,8 @@ reg_init_subj=
 grad_coeff_file=
 scratch_dir=
 
+correct_pd=0
+
 resample_res=
 
 #default:
@@ -119,6 +121,7 @@ then
  echo ""
  echo "          [--matrices NAME (Additional matrices: FSL_FA, FSL_MD, DKE_FA, etc, default: $matrix)"
  echo "          [--threshold TH (Threshold from 0-1, fraction of streamlines to get pathway mask, default: $threshold)"
+ echo "          [--correct_pd  (enable --pd in probtrackx2 - correct path distribution by length of pathways)"
  echo ""
  echo "      Choose built-in atlas:"
  echo "          [--atlas NAME ] (default: dosenbach)"
@@ -144,6 +147,7 @@ popd > /dev/null
  echo ""
  echo "      Optional:"
  echo "          [--nprobseeds N ] (for probtrackx, default: 5000) "
+ echo "          [--correct_pd  (enable --pd in probtrackx2 - correct path distribution by length of pathways)"
 
  exit 1
 fi
@@ -184,6 +188,8 @@ while :; do
 	nobedpost=1;;
      --no-dke )
 	nodke=1;;
+     --correct_pd )
+	correct_pd=1;;
      --n_cpus )       # takes an option argument; ensure it has been specified.
           if [ "$2" ]; then
                 n_cpus=$2
@@ -1509,8 +1515,8 @@ elif [ "$analysis_level" = "group" ]
       fi
 
 	matrix_nii=`ls $derivatives/prepdwi/$subj_sess_dir/dwi/${subj_sess_prefix}*_${matrix}.nii.gz | head -n 1`
-echo      $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $matrix_nii $threshold $subj_sess_prefix
-      $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $matrix_nii $threshold $subj_sess_prefix
+echo      $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $matrix_nii $threshold $correct_pd $subj_sess_prefix
+      $execpath/bin/processProbtrackConnectivity  $derivatives/bedpost probtrack.$atlas $nprobseeds $atlas_label_nii $atlas_label_csv $atlas_space $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_atlas-${atlas}_connectivity.csv $matrix $matrix_nii $threshold $correct_pd $subj_sess_prefix
 
  done #subjsess
   done #subj
@@ -1641,8 +1647,8 @@ fi
 
       echo "matching subject_label_nii=$subject_label_nii"
 
-       echo $execpath/bin/processProbtrackConnectivityExistingLabels  $derivatives/bedpost probtrack.subjlabels $nprobseeds $subject_label_nii $subject_label_csv ${subject_label_name} $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_labels-${subject_label_name}_connectivity.csv $threshold $subj_sess_prefix
-       $execpath/bin/processProbtrackConnectivityExistingLabels  $derivatives/bedpost probtrack.subjlabels $nprobseeds $subject_label_nii $subject_label_csv ${subject_label_name} $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_labels-${subject_label_name}_connectivity.csv $threshold $subj_sess_prefix
+       echo $execpath/bin/processProbtrackConnectivityExistingLabels  $derivatives/bedpost probtrack.subjlabels $nprobseeds $subject_label_nii $subject_label_csv ${subject_label_name} $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_labels-${subject_label_name}_connectivity.csv $threshold $correct_pd $subj_sess_prefix
+       $execpath/bin/processProbtrackConnectivityExistingLabels  $derivatives/bedpost probtrack.subjlabels $nprobseeds $subject_label_nii $subject_label_csv ${subject_label_name} $n_cpus $derivatives/prepdwi/${subj_sess_dir}/dwi/${subj_sess_prefix}_dwi_labels-${subject_label_name}_connectivity.csv $threshold $correct_pd $subj_sess_prefix
 
  done #subjsess
   done #subj
