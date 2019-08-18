@@ -67,8 +67,8 @@ for i in `seq 1 ${Ni}`; do indx="$indx $iacq"; done;
 echo $indx > $eddy_work/index.txt
 
 echo indx: $indx
-echo eddy_openmp --imain=$in_dwi --mask=$brainmask --acqp=$eddy_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$in_bvec --bvals=$in_bval --out=$eddy_dir/dwi -v --repol
-eddy_openmp --imain=$in_dwi --mask=$brainmask --acqp=$eddy_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$in_bvec --bvals=$in_bval --out=$eddy_dir/dwi -v --repol
+echo eddy_openmp --imain=$in_dwi --mask=$brainmask --acqp=$eddy_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$in_bvec --bvals=$in_bval --out=$eddy_dir/dwi -v --repol --data_is_shelled
+eddy_openmp --imain=$in_dwi --mask=$brainmask --acqp=$eddy_work/pedir.txt --index=$eddy_work/index.txt --bvecs=$in_bvec --bvals=$in_bval --out=$eddy_dir/dwi -v --repol --data_is_shelled
 
 
 dwi_bvec=$eddy_dir/dwi.eddy_rotated_bvecs
