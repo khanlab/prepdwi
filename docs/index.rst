@@ -6,7 +6,7 @@
 Prepdwi Documentation
 =====================
 
-Prepdwi is a BIDS App developed by the Khan Lab to pre-process diffusion-weighted MRI data and perform simple tractography.  Steps to generate a pre-processed DWI image include de-noising,  unringing, EPI distortion correction (top-up, and if necessary non-linear image registration), eddy correction, gradient correction (requires coefficient file), and rigid registration to T1w.  The app also generates FSL FDT dtifit maps, DKE kurtosis maps (for multi-shell DWI only), and FSL BEDPOST pre-processing (CPU parallelization over slices).  
+Prepdwi is a BIDS App developed by the Khan Lab to pre-process diffusion-weighted MRI data, and optionally also perform simple probabalistic tractography.  Steps to generate a pre-processed DWI image include de-noising,  unringing, EPI distortion correction (top-up, and if necessary non-linear image registration), eddy correction, gradient correction (requires coefficient file), and rigid registration to T1w.  The app also generates FSL FDT dtifit maps, DKE kurtosis maps (for multi-shell DWI only), and FSL BEDPOST pre-processing.  
 
 .. toctree::
    :maxdepth: 2

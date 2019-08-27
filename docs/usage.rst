@@ -2,23 +2,27 @@
 Usage
 =================
 
-Prepdwi has three level of analysis named as participant, group and participant2.
+The prepdwi pipeline is a BIDS App that has three different levels of analysis: a pre-processing pipeline (`participant`), tractography (`participant2`), and QC report generation (`group`). 
+
+This page describes the command-line arguments for prepdwi and for each level of analysis. For details on the pipeline itself, please see :doc:`pipeline`.
 
 usage::
 
         prepdwi bids_dir output_dir {participant,group,participant2} <optional arguments>
                   [--participant_label PARTICIPANT_LABEL [PARTICIPANT_LABEL...]]
+                  [-w WORK_DIR]  (scratch directory)
+                  [--n_cpus NCPUS] (for bedpost, default: 8)
+
+         participant options:
                   [--matching_dwi MATCHING_PATTERN]
                   [--matching_T1w MATCHING_STRING]
                   [--reg_init_participant PARTICIPANT_LABEL]
                   [--grad_coeff_file GRAD_COEFF_FILE]
-                  [-w WORK_DIR]  (scratch directory)
 
                   [--no-regT1]
                   [--no-topup]
                   [--no-bedpost]
                   [--no-dke]
-                  [--n_cpus NCPUS] (for bedpost, default: 8)
 
          participant2 (probtrack connectivity) options:
                   [--nprobseeds] N (for probtrackx, default: 5000)
@@ -29,13 +33,32 @@ usage::
                   cort_striatum_midbrain        dosenbach  yeo17  yeo17_striatum  yeo7  yeo7_striatum
 
                Customize atlas labels:
-                  {--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)
-                  [--atlas_label_nii NIFTI
-                  [--atlas_label_csv LABEL_INDEX_CSV    
+                  [--atlas_space NAME (MNI152_1mm or MNI152NLin2009cAsym)]
+                  [--atlas_label_nii NIFTI]
+                  [--atlas_label_csv LABEL_INDEX_CSV]
+
+
+BIDS requirements
+------------------
+
+The prepdwi pipeline requires at least one ``dwi`` image (``nii``/``nii.gz``), in the ``dwi`` folder as per the BIDS standard. A ``json`` sidecar is also required for each DWI nifti, with the ``PhaseEncodingDirection`` and ``EffectiveEchoSpacing`` variables set.  A ``T1w`` nifti (in the ``anat`` subfolder) is also highly recommended, but not required if the ``--no-regT1`` flag is used.  If multiple T1w nifti images exist, only the first one (from alphanumeric sorting) will be used. To specify a particular T1w image to use, you can use the ``--matching-T1w`` option.
+
 
 
 Flag description
 ----------------
+
+General flags
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+=========================   =====================         ============================================================================
+Flag                        Options                       Description
+=========================   =====================         ============================================================================
+--participant_label         PARTICIPANT_LABEL             Runs for a subset of subjects 
+-w                          WORK_DIR                      Specify scratch folder for temporary files
+--n_cpus NCPUS.                                           Number of CPUs to use for parallel steps (e.g. BEDPOST with GNU parallel). Default: 8
+=========================   =====================         ============================================================================
+
 
 Participant level flags
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -43,17 +66,14 @@ Participant level flags
 =========================   =====================         ============================================================================
 Flag                        Options                       Description
 =========================   =====================         ============================================================================
---participant_label         subject ID                    To run prepdwi for one subject. 
 --matching_dwi              MATCHING_PATTERN                     
 --matching_T1w              MATCHING_STRING                     
---reg_init_participant      subject ID                    Use this flag to re-run participant level for the subjects with failed registrartoins observed in the group level. Use a subject with good registration to initialize the registartion. The subject ID should match the ID as in the work folder. 
---grad_coeff_file
--w
---no-regT1                                            
---no-topup  
--no-bedpost                                               Use this flag if you don't want to run FSL BEDPOST
---no-dke
---n_cpus NCPUS.                                           Number of cpus for bedpost. Default: 8
+--reg_init_participant      PARTICIPANT_LABEL             Use this flag to re-run participant level for the subjects with failed registrartoins observed in the group level. Use a subject with good registration to initialize the registartion. The subject ID should match the ID as in the work folder. 
+--grad_coeff_file           GRAD_COEFF_FILE               Use the provided gradient coeffient file (Siemens format) for gradient non-linearity correction (disabled otherwise)
+--no-regT1                                                Disable rigid registration and resampling of processed DWI to the T1 space 
+--no-topup                                                Disable Topup correction (use this if opposite phase encode runs do not exist)
+--no-bedpost                                              Disable BEDPOST pre-processing 
+--no-dke                                                  Disable DKE Kurtosis map estimation
 =========================   =====================         ============================================================================
 
 
@@ -64,16 +84,16 @@ Participant2 level flags
 Flag                            Options                   Description
 =============================   =======================   ============================================================================
 --nprobseeds                    N                         Number of seeds for probtrackx, default: 5000
---atlas\ :sup:`1`               dosenbach                 Name of the atlas that you want to have the connectivity. default: dosenbach
+--atlas\ :sup:`1`               dosenbach                 Name of the atlas to use for connectivity. default: dosenbach
     \                           cort_striatum_midbrain    
     \                           dosenbach  yeo17  
     \                           yeo17_striatum  
     \                           yeo7  
     \                           yeo7_striatum                                           
---atlas_space\ :sup:`2`         MNI152_1mm
+--atlas_space\ :sup:`2`         MNI152_1mm                MNI space where the atlas is defined
     \                           MNI152NLin2009cAsym     
---atlas_label_nii\ :sup:`2`     NIFTI                     Nifty file with labeled ROIs
---atlas_label_csv\ :sup:`2`     LABEL_INDEX_CSV           csv file with label indices 
+--atlas_label_nii\ :sup:`2`     NIFTI                     Nifti file with labeled ROIs
+--atlas_label_csv\ :sup:`2`     LABEL_INDEX_CSV           CSV file with indices and labels (each line as: Label_Name,Label_Number)
 =============================   =======================   ============================================================================
 
 \ :sup:`1` flgas for available atlases, 

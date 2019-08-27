@@ -2,9 +2,12 @@
 Installation
 ============
 
-Prepdwi is built into a singularity container which you can easily download an image of it from https://singularity-hub.org/collections/392 
+Prepdwi is a BIDS App, and is thus built into a Docker/Singularity container. Our current build process uses Docker to build and test with continuous integration, Docker Hub to store the latest version and each release, and copies of these containers are also stored on Singularity Hub. The `latest` tag in both Docker Hub and Singularity Hub is the latest development version of the pipeline, with the releases tagged with v0.* (latest release is v0.0.8 as of September 4, 2018). 
 
-Once you downloaded the latest stable version of prepdwi, follow the steps below to run it.
+https://hub.docker.com/r/khanlab/prepdwi/
+https://singularity-hub.org/collections/392 
+
+You can run prepdwi using either Docker or Singularity. We recommend Singularity if you are running the pipeline on a shared compute system. For instructions on running BIDS Apps with Docker, please see http://bids-apps.neuroimaging.io
 
 Install Singularity
 ########
@@ -16,14 +19,14 @@ https://www.sylabs.io/guides/2.5.1/user-guide/
 Running prepdwi
 ########
 
-Once the singularity set up in your computer you can start running prepdwi. The following is an example of running prepdwi on a set of BIDS data.
+Once Singularity set up on your computer you can start running prepdwi. The following is an example of running prepdwi on a BIDS dataset.
 
 Example
 *******
 
 For this example, let's assume that your downloaded singularity image is saved in the path home/singularity/Singularity.0.07g and your BIDS data is saved in home/data/bids. you can rename the image name from Singularity.0.07g to prepdwi_7g for simplicity
 
-The data in the "bids" folder should be in the BIDS format. For moredetails about BIDS format, read:
+The data in the "bids" folder should be in the BIDS format. For more details about BIDS format, read:
 http://bids.neuroimaging.io/
 
 participant level analysis
