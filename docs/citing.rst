@@ -2,6 +2,43 @@
 Citing Prepdwi
 ===============
 
+#versions:
+neuroglia-dwi:latest
+mrtrix 3.0_RC3
+camino 2019-02-01 1c4ef77615d103d43adcff6c79b72d0bbdac0897
+unring 2017-02-17
+dke v1.0 
+niftyreg 1.3.9
+fsl v6.0 (fslinstaller 3.0.12)
+
+
+# draft boilerplate text:
+
+
+All structural and diffusion data were processed and analyzed using an open-source and containerized application, `prepdwi`, which uses the BIDS [cite BIDS paper] and BIDS Apps [cite BIDS Apps paper] standard to perform standardized pre-processing, fitting, image registration, and tractography.
+
+## T1w pre-processing (*participant*-level)
+T1w images were skull-stripped using `bet` [FSL, using the `-f 0.4 -B` options, cite], corrected for non-uniformities `N4BiasFieldCorrection` [ANTS, cite], and normalized by the mean intensity within the brain mask. 
+Pre-processed T1w images were registered with standard templates (MNI ICBM152 non-linear 6th generation symmetric template, referred to as `MNI152_1mm` in FSL, and the `MNI152NLin2009cAsym` template) using an initial affine registration, followed by deformable b-spline registration using NiftyReg (v1.3.9, [cite]).
+Overlay visualizations depicting the skull-stripping, affine registration, and deformable registration are generated for each subject.
+Failures in affine registration were corrected by forcing initialization with an existing transformation matrix. Discrete and probabilistic segmentation images in the template spaces were automatically propagated to each subject's T1w space, using nearest neighbour interpolation for discrete segmentations, and linear for probabilistic segmentations.
+
+## Diffusion pre-processing (*participant*-level)
+
+Diffusion-weighted MRI data were pre-processed with denoising using a local PCA method with `dwidenoise` (mrtrix, [cite]), and correction of ringing artifacts with the `unring` tool [cite]. 
+Eddy current distortions were corrected using `eddy` (FSL, [cite]), with the `--repol` option enabled for outlier replacement.  
+If multiple phase-encoding polarities were used in the acquisition, `top-up` was used to perform B0 field map correction prior to `eddy`, with the resulting parameters fed into `eddy`. If data were not sufficient to run `top-up`, a registration-based distortion correction was performed following `eddy`, using B-spline deformable registration between the average b0 image and a T1w volume with inverted intensities. 
+Finally, within-subject rigid registration of the corrected DWI volume and the T1w volume was performed (NiftyReg), to bring the DWI images in the same space as the T1w, where atlas labels were also propagated.
+If gradient non-linearities were provided through spherical harmonic coefficients (e.g. for the AC84 gradient system on the 7T), these were used with the `gradient_unwarp` tool (cite) to generate a non-linear transformation, which was composed with the T1w linear transformation to resample the DWI images into the corrected T1w space in a single step. Modulation with the determinant of the Jacobian of the unwarping was used to correct for intensity differences in the magnitude images due to gradient non-linearities. 
+Pre-processed DWI images in the T1w space were then used to estimate diffusion tensor metrics using `dtifit` (FSL [cite]), and ball and stick modelling for probablistic tractography using `bedpostx`. 
+If multi-shell diffusion data was detected, diffusion kurtosis metrics were computed using the DKE toolbox (DKE [cite]).
+
+
+##
+
+
+
+
 
 
 Prepdwi is mainly using the FSL\ :sup:`1,2,3` tools to preprocess the DTI data. Denoising of the images are performed using the "denoise" tool in MRtrix() and the unrining is performed using the unring\ :sup:`10` tool. 
