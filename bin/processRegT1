@@ -66,8 +66,8 @@ out_prefix=$epireg_work/b0_to_t1
 xfm_b0_t1=$out_prefix.mat
 
 #use reg_aladin instead, then convert to fsl transform -- more reliable for 7T, need to test for others..
-echo reg_aladin -rigOnly -flo $b0 -ref $t1 -res $epireg_work/b0_to_t1_aladin.nii.gz -aff $epireg_work/b0_to_t1_aladin.xfm
-reg_aladin -rigOnly -flo $b0 -ref $t1 -res $epireg_work/b0_to_t1_aladin.nii.gz -aff $epireg_work/b0_to_t1_aladin.xfm
+echo reg_aladin -nac -rigOnly -flo $b0 -ref $t1 -res $epireg_work/b0_to_t1_aladin.nii.gz -aff $epireg_work/b0_to_t1_aladin.xfm
+reg_aladin -nac -rigOnly -flo $b0 -ref $t1 -res $epireg_work/b0_to_t1_aladin.nii.gz -aff $epireg_work/b0_to_t1_aladin.xfm
 echo c3d_affine_tool $epireg_work/b0_to_t1_aladin.xfm  -ref $t1 -src $b0 -ras2fsl -o $xfm_b0_t1
 c3d_affine_tool $epireg_work/b0_to_t1_aladin.xfm  -ref $t1 -src $b0 -ras2fsl -o $xfm_b0_t1
 
