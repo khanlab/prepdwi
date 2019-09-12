@@ -124,6 +124,29 @@ jobs:
             docker tag $DOCKER_NAME $DOCKER_RELEASE
             docker push $DOCKER_RELEASE
             docker push $DOCKER_NAME
+            
+  deploy_branch:
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - setup_remote_docker            
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: 
+          name: Load docker image
+          no_output_timeout: 1h
+          command: |
+            docker load -i /tmp/workspace/docker_image.tar
+      - run:
+          name: Pushing build to docker hub
+          no_output_timeout: 1h
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            export DOCKER_NAME=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:latest
+            export DOCKER_RELEASE=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME:$CIRCLE_BRANCH
+            # tag and push here:
+            docker tag $DOCKER_NAME $DOCKER_RELEASE
+            docker push $DOCKER_RELEASE
 
   deploy_shub:
     docker:
@@ -177,8 +200,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-            branches:
-              only: master
       - test:
           requires:
             - build
@@ -186,8 +207,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-            branches:
-              only: master
       - deploy_dev:
           requires:
             - build
@@ -197,6 +216,16 @@ workflows:
               ignore: /^v.*/
             branches:
               only: master
+          context: org-global
+      - deploy_branch:
+          requires:
+            - build
+            - test
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: master
           context: org-global
       - deploy_release:
           requires:
@@ -219,6 +248,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+             
 
   nightly:
     triggers:
