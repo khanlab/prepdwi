@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# dependencies:  N4BiasFieldCorrection
+# precondition:  importDWI
+
+if [ "$#" -lt 1 ]
+then
+ echo " writes output to dwi/<input>_N4"
+ echo ""
+ echo "Command-line Usage: $0 <in_uncorrected>  <subjid>"
+ exit 0
+fi
+
+output_dir=.
+
+in_uncorrected=$1
+out_name=${in_uncorrected}_N4
+shift 1
+
+
+
+if [ -f $1 ]
+then
+ subjids=`cat $1`
+else
+ subjids=$1
+fi
+
+
+for subj in $subjids
+do
+
+
+
+subj_dir=$output_dir/$subj
+dwi_dir=$subj_dir/dwi
+uncorr_dir=$dwi_dir/$in_uncorrected
+
+
+N4_dir=$dwi_dir/$out_name
+work_dir=$N4_dir/work
+mkdir -p $work_dir
+
+
+
+for dwi in `ls $uncorr_dir/dwi*.nii.gz`
+do
+
+bvec=${dwi%%.nii.gz}.bvec
+bval=${dwi%%.nii.gz}.bval
+json=${dwi%%.nii.gz}.json
+
+suffix=${dwi##*/}
+
+ N4_dwi=$N4_dir/$suffix
+ N4_bvec=${N4_dwi%%.nii.gz}.bvec
+ N4_bval=${N4_dwi%%.nii.gz}.bval
+ N4_json=${N4_dwi%%.nii.gz}.json
+
+ 
+
+#get b0 images
+bval_thresh=50
+ di=0
+ for bv in `cat $bval`
+ do
+ if [ "$bv" -lt $bval_thresh ]
+ then
+  echo $bv
+  b0img=$work_dir/${suffix}.b0_$di.nii.gz
+  echo fslroi $dwi  $b0img $di 1
+  fslroi $dwi  $b0img $di 1
+ fi
+ di=$((di+1))
+ done #bval
+
+ #create avg b0
+ avg_b0=$work_dir/${suffix}.avg_b0.nii.gz
+ avg_b0_corr=$work_dir/${suffix}.avg_b0.corrected.nii.gz
+ avg_b0_biasfield=$work_dir/${suffix}.avg_b0.biasfield.nii.gz
+
+ echo fslmerge -t $avg_b0 $work_dir/${suffix}.b0_*.nii.gz
+ fslmerge -t $avg_b0 $work_dir/${suffix}.b0_*.nii.gz
+ echo fslmaths $avg_b0 -Tmean $avg_b0
+ fslmaths $avg_b0 -Tmean $avg_b0
+
+
+ #perform N4 on avg_b0
+ echo N4BiasFieldCorrection -i $avg_b0 -o [$avg_b0_corr,$avg_b0_biasfield] 
+
+ #use biasfield on entire dwi
+ echo fslmaths $dwi -div $avg_b0_biasfield $N4_dwi
+
+  cp -v $bvec $N4_bvec
+  cp -v $bval $N4_bval
+  cp -v $json $N4_json
+ 
+
+done
+
+done

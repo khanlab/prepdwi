@@ -49,6 +49,7 @@ participant_label=
 
 nodenoise=0
 nounring=0
+noN4=1
 notopup=0
 noeddy=0
 nodistcorr=0
@@ -56,6 +57,7 @@ noregT1=0
 nodke=0
 nobedpost=0
 nogradcorr=1
+
 
 matching_T1w=
 n_cpus=8
@@ -103,6 +105,7 @@ then
  echo ""
  echo "          [--no-denoise]"
  echo "          [--no-unring]"
+ echo "          [--use-N4] (default: disabled)"
  echo "          [--no-topup]"
  echo "          [--no-eddy]"
  echo "          [--no-distcorr]"
@@ -174,7 +177,9 @@ while :; do
 	nodenoise=1;;
     --no-unring )
 	nounring=1;;
-    --no-topup )
+    --use-N4 )
+	noN4=0;;
+   --no-topup )
 	notopup=1;;
     --no-eddy )
 	noeddy=1;;
@@ -930,6 +935,43 @@ fi #N_t1w=0
         echo "--- Running $thisstep  ---"
         echo $execpath/bin/processUnring $prevstep $subj_sess_prefix
         $execpath/bin/processUnring $prevstep $subj_sess_prefix
+    else
+
+        echo "--- $thisstep already run ---"
+    fi
+
+    if [ ! -e $thisproduces ]
+    then
+	 echo "Failed to produce $thisproduces at step ${thisstep}, exiting!"
+	 exit 1
+    fi
+
+
+    prevstep=${prevstep}_${thisstep}
+
+ fi #if thisdisable
+
+
+#========================================================================
+# N4 nonuniformity correction
+#========================================================================
+
+ thisdisable=$noN4
+ thisstep=N4
+ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi_$Ndwi.nii.gz
+
+ if [ "$thisdisable" = "1" ]
+ then
+     prevstep=$prevstep
+    echo "--- ${thisstep} disabled ---"
+ else
+
+
+    if [ ! -e $thisproduces ]
+    then
+        echo "--- Running $thisstep  ---"
+        echo $execpath/bin/processN4 $prevstep $subj_sess_prefix
+        $execpath/bin/processN4 $prevstep $subj_sess_prefix
     else
 
         echo "--- $thisstep already run ---"
