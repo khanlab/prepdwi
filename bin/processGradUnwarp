@@ -130,8 +130,19 @@ fi
 
  echo applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
  applywarp --rel -i $dwi_vol -r $b0_t1_ref  -w $combined_warp --interp=spline -o $out_dwi_vol
- echo applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
- applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+ 
+ if [ "$custom_brainmask" = "1" ]
+ then
+   # if custom_brainmask was used, then that brainmask (from regT1 dir) should be gradcorrected already
+   # so, no need to compose T1 and gradunwarp, just need to resample regT1 brainmask into the same ref space (it might be already, but just to be safe..)
+   regT1_brain_mask=$regT1_dir/brainmask.nii.gz
+   echo reg_resample -flo $regT1_brain_mask -ref $b0_t1_ref -res $out_brain_mask -NN 0
+   reg_resample -flo $regT1_brain_mask -ref $b0_t1_ref -res $out_brain_mask -NN 0
+
+ else
+   echo applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+   applywarp --rel -i $brain_mask -r $b0_t1_ref  -w $combined_warp --interp=nn -o $out_brain_mask
+ fi
 
  else
 
