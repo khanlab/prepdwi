@@ -96,8 +96,21 @@ cp $dwi_bval $out_dir/dwi.bval
  #resample dwi to t1 space 
  echo flirt -in $dwi_vol -ref $b0_t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
  flirt -in $dwi_vol -ref $b0_t1_ref -applyxfm -init $xfm_b0_t1 -interp spline -out $out_dir/dwi.nii.gz
+
+#if custom_brainmask option was used (imported from T1 space), then use that instead of brainmask from previous dwi stage
+if [ "$custom_brainmask" = "1" ]
+then
+	t1_brain=$t1_dir/t1.brain.inorm.nii.gz
+	echo reg_resample -flo $t1_brain -ref $b0_t1_ref -res $out_dir/brainmask.nii.gz -NN 0
+	reg_resample -flo $t1_brain -ref $b0_t1_ref -res $out_dir/brainmask.nii.gz -NN 0
+	echo fslmaths $out_dir/brainmask.nii.gz -bin $out_dir/brainmask.nii.gz
+	fslmaths $out_dir/brainmask.nii.gz -bin $out_dir/brainmask.nii.gz
+else
+
  echo flirt -in $brain_mask -ref $b0_t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
  flirt -in $brain_mask -ref $b0_t1_ref -applyxfm -init $xfm_b0_t1 -interp nearestneighbour -out $out_dir/brainmask.nii.gz
+
+fi
 
 #crop tight around b0 (since t1 space is typically larger, also makes future processing quicker)
 roixyzt=`fslstats $b0_t1_ref -w`

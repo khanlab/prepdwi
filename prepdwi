@@ -1122,6 +1122,9 @@ thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
  thisstep=regT1
  thisproduces=$subj_sess_prefix/dwi/${prevstep}_${thisstep}/dwi.nii.gz
 
+ export custom_brainmask
+
+
  if [ "$thisdisable" = "1" ]
  then
      prevstep=$prevstep
