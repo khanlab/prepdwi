@@ -552,8 +552,10 @@ then
 
  in_brainmask_dir=`realpath $in_brainmask_dir`
  custom_brainmask=1
- searchstring_brainmask=*T1w*brain.nii.gz #skull-stripped intensity normalized T1w
-
+ 
+ searchstring_brainmask=*desc-BEAST_T1w_brainmask.nii.gz # brainmask
+ searchstring_preprocT1w=*desc-N4_T1w.nii.gz #intensity normalized T1w
+ 
 else
  custom_brainmask=0
 
@@ -572,7 +574,9 @@ then
  in_fmriprep_dir=`realpath $in_fmriprep_dir/fmriprep`
  in_brainmask_dir=$in_fmriprep_dir
  custom_brainmask=1
- searchstring_brainmask=*desc-preproc_T1w.nii.gz #skull-stripped intensity normalized T1w
+ searchstring_brainmask=*desc-brain_mask.nii.gz #binary mask
+ searchstring_preprocT1w=*desc-preproc_T1w.nii.gz #intensity normalized T1w
+
 else
  custom_brainmask=0
 
@@ -718,14 +722,17 @@ if [ "$custom_brainmask" = 1 ]
 then
 
 t1w_in_brainmask=`eval ls $in_brainmask_dir/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_brainmask} | head -n 1`
+t1w_in_preproc=`eval ls $in_brainmask_dir/$subj_sess_dir/anat/${subj_sess_prefix}${searchstring_preprocT1w} | head -n 1`
 
-if [ -e $t1w_in_brainmask ]
+if [ -e $t1w_in_brainmask -a -e $t1w_in_preproc ]
 then
-	echo "Using pre-computed skull-stripped image..."
+	echo "Using pre-computed brainmask and intensity-normalized T1w image..."
 	echo mkdir -p $subj_sess_prefix/t1
 	mkdir -p $subj_sess_prefix/t1
-	echo cp -v $t1w_in_brainmask $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
-	cp -v $t1w_in_brainmask $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
+	echo cp -v $t1w_in_brainmask $subj_sess_prefix/t1/brainmask.nii.gz
+	cp -v $t1w_in_brainmask $subj_sess_prefix/t1/brainmask.nii.gz
+	echo fslmaths $t1w_in_brainmask -bin -mul $t1w_in_preproc $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
+	fslmaths $t1w_in_brainmask -bin -mul $t1w_in_preproc $subj_sess_prefix/t1/t1.brain.inorm.nii.gz
 fi
 
 fi
