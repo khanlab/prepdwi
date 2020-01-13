@@ -540,6 +540,7 @@ fi
 #exports for scripts to make use of
 export scratch_dir
 
+custom_brainmask=0
 
 if [ -n "$in_brainmask_dir" ]
 then
@@ -555,10 +556,7 @@ then
  
  searchstring_brainmask=*desc-BEAST_T1w_brainmask.nii.gz # brainmask
  searchstring_preprocT1w=*desc-N4_T1w.nii.gz #intensity normalized T1w
- 
-else
- custom_brainmask=0
-
+ echo "Using custom_brainmask and preprocT1w from BEAST"
 fi
 
 
@@ -576,10 +574,7 @@ then
  custom_brainmask=1
  searchstring_brainmask=*desc-brain_mask.nii.gz #binary mask
  searchstring_preprocT1w=*desc-preproc_T1w.nii.gz #intensity normalized T1w
-
-else
- custom_brainmask=0
-
+ echo "Using custom_brainmask and preprocT1w from fmriprep"
 fi
 
 
