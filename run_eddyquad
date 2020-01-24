@@ -1,0 +1,47 @@
+#!/bin/bash
+
+execpath=`dirname $0`
+execpath=`realpath $execpath`
+
+if [ "$#" -lt 1 ]
+then
+ echo "Usage: $0 prepdwi_dir "
+ exit 1
+fi
+
+
+
+in_prepdwi_dir=$1
+out_qc=$in_prepdwi_dir/eddy_qc
+mkdir -p $out_qc
+    ds=`date +%Y-%m-%d_%Hh%Mm`
+    squad_dir=$out_qc/squad_$ds
+    squad_list=$out_qc/squad_list_$ds.txt
+    rm -f $squad_list
+
+    #loop over sub- and sub-/ses-
+    for subjfolder in `ls -d $in_prepdwi_dir/work/sub-* 2> /dev/null`
+    do
+
+	    subj=${subjfolder##*/}
+
+	    for eddy in `ls -d $subjfolder/dwi/*eddy`
+	    do
+		echo "eddy folder: $eddy"
+		eddyIdx=$eddy/work/index.txt
+		eddyParams=$eddy/dwi.eddy_parameters
+		mask=$eddy/brainmask.nii.gz
+		bvals=$eddy/dwi.bval
+		output_dir=$out_qc/${subj}
+
+		eddyBase=$eddy/dwi
+
+		 eddy_quad $eddyBase --eddyIdx $eddyIdx --eddyParams $eddyParams --mask $mask --bvals $bvals --output-dir $output_dir -v
+
+		 echo $output_dir >> $squad_list
+
+
+	    done
+    done
+
+    eddy_squad $squad_list -o $squad_dir 
