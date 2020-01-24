@@ -29,14 +29,22 @@ mkdir -p $out_qc
 	    do
 		echo "eddy folder: $eddy"
 		eddyIdx=$eddy/work/index.txt
-		eddyParams=$eddy/dwi.eddy_parameters
+		if [ -e $eddy/work/pedir.txt ]
+		then 
+			eddyParams=$eddy/work/pedir.txt
+		else
+			#look for it in topup folder
+			topup=${eddy%_eddy*}
+			eddyParams=$topup/work/pedir.txt
+		fi
 		mask=$eddy/brainmask.nii.gz
 		bvals=$eddy/dwi.bval
 		output_dir=$out_qc/${subj}
 
 		eddyBase=$eddy/dwi
 
-		 eddy_quad $eddyBase --eddyIdx $eddyIdx --eddyParams $eddyParams --mask $mask --bvals $bvals --output-dir $output_dir -v
+		echo  eddy_quad $eddyBase --eddyIdx $eddyIdx --eddyParams $eddyParams --mask $mask --bvals $bvals --output-dir $output_dir -v
+		  eddy_quad $eddyBase --eddyIdx $eddyIdx --eddyParams $eddyParams --mask $mask --bvals $bvals --output-dir $output_dir -v
 
 		 echo $output_dir >> $squad_list
 
@@ -44,4 +52,5 @@ mkdir -p $out_qc
 	    done
     done
 
+    echo eddy_squad $squad_list -o $squad_dir 
     eddy_squad $squad_list -o $squad_dir 
