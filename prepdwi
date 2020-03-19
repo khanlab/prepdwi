@@ -1352,6 +1352,10 @@ popd
 elif [ "$analysis_level" = "group" ]
  then
 
+    echo "generating eddy qc reports with run_eddyquad"
+    $execdir/run_eddyquad $out_folder
+
+
 
     qc_dir=QC_`date +%Y-%m-%d_%Hh_%Mm`
 

@@ -12,7 +12,7 @@ fi
 
 
 in_prepdwi_dir=$1
-out_qc=$in_prepdwi_dir/eddy_qc
+out_qc=$in_prepdwi_dir/reports/eddy_qc
 mkdir -p $out_qc
     ds=`date +%Y-%m-%d_%Hh%Mm`
     squad_dir=$out_qc/squad_$ds
