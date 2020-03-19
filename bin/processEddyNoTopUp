@@ -88,7 +88,7 @@ dwi_bval=$eddy_dir/dwi.bval
 
 dwi_biascorrect_initial=$eddy_work/dwi_biascorrect_initial.nii.gz
 brainmask_initial=$eddy_work/brainmask_initial.nii.gz
-dwi_biascorrect_final=$eddy_dir/dwi_biascorrect.nii.gz
+dwi_biascorrect_final=$eddy_dir/dwi.nii.gz
 brainmask_final=$eddy_dir/brainmask.nii.gz
 
 echo dwibiascorrect -ants $dwi_vol $dwi_biascorrect_initial -fslgrad $dwi_bvec $dwi_bval -force
