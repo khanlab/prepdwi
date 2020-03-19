@@ -72,18 +72,41 @@ eddy_openmp --imain=$in_dwi --mask=$brainmask --acqp=$eddy_work/pedir.txt --inde
 
 
 dwi_bvec=$eddy_dir/dwi.eddy_rotated_bvecs
-dwi_vol=$eddy_dir/dwi.nii.gz
-
+dwi_vol=$eddy_dir/dwi_nobiascorrect.nii.gz
 cp -v $dwi_bvec $eddy_dir/dwi.bvec
 cp -v $in_bval $eddy_dir/dwi.bval
 
-#update brainmask after eddy correction
-echo dwi2mask -fslgrad ${eddy_dir}/dwi.bvec ${eddy_dir}/dwi.bval ${dwi_vol} $brainmask
-dwi2mask -fslgrad ${eddy_dir}/dwi.bvec ${eddy_dir}/dwi.bval ${dwi_vol} $brainmask
+#use output of eddy as nobiascorrect
+mv -v $eddy_dir/dwi.nii.gz $dwi_vol
+
+dwi_bval=$eddy_dir/dwi.bval
+
+# initial biascorrect
+# initial brainmasking with biascorrect
+# final biascorrect with initial brainmask
+# final brainmasking with biascorrect 
+
+dwi_biascorrect_initial=$eddy_work/dwi_biascorrect_initial.nii.gz
+brainmask_initial=$eddy_work/brainmask_initial.nii.gz
+dwi_biascorrect_final=$eddy_dir/dwi_biascorrect.nii.gz
+brainmask_final=$eddy_dir/brainmask.nii.gz
+
+echo dwibiascorrect -ants $dwi_vol $dwi_biascorrect_initial -fslgrad $dwi_bvec $dwi_bval -force
+dwibiascorrect -ants $dwi_vol $dwi_biascorrect_initial -fslgrad $dwi_bvec $dwi_bval -force
+
+echo dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bval -force
+dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bval -force
+
+echo dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
+dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
+
+echo dwi2mask $dwi_biascorrect_final $brainmask_final -fslgrad $dwi_bvec $dwi_bval -force
+dwi2mask $dwi_biascorrect_final $brainmask_final -fslgrad $dwi_bvec $dwi_bval -force
+
+echo dtifit -k $dwi_biascorrect_final -o $eddy_dir/dti -m $brainmask_final -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
+dtifit -k $dwi_biascorrect_final -o $eddy_dir/dti -m $brainmask_final -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
 
 
-echo dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
-dtifit -k $dwi_vol -o $eddy_dir/dti -m $brainmask -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
 
 
 done
