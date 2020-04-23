@@ -1353,7 +1353,7 @@ elif [ "$analysis_level" = "group" ]
  then
 
     echo "generating eddy qc reports with run_eddyquad"
-    $execdir/run_eddyquad $out_folder
+    $execpath/run_eddyquad $out_folder
 
 
 
