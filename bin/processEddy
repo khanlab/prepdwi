@@ -128,7 +128,7 @@ dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bva
 
 # Fix for image origin differences (JK - July 28, 2020)
 echo mrtransform $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
-mrtransfrom $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
+mrtransform $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
 
 echo dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
 dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
