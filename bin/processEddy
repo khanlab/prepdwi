@@ -110,11 +110,13 @@ cp -v $dwi_bval $eddy_dir/dwi.bval
 
 # initial biascorrect
 # initial brainmasking with biascorrect
+# perform transform of masking to account for potential ants tolerance error in N4BiasFieldCorrection (JK - July 28, 2020)
 # final biascorrect with initial brainmask
 # final brainmasking with biascorrect 
 
 dwi_biascorrect_initial=$eddy_work/dwi_biascorrect_initial.nii.gz
 brainmask_initial=$eddy_work/brainmask_initial.nii.gz
+brainmask_fix=$eddy_work/brainmask_initial_fixed.nii.gz
 dwi_biascorrect_final=$eddy_dir/dwi.nii.gz
 brainmask_final=$eddy_dir/brainmask.nii.gz
 
@@ -123,6 +125,10 @@ dwibiascorrect -ants $dwi_vol $dwi_biascorrect_initial -fslgrad $dwi_bvec $dwi_b
 
 echo dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bval -force
 dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bval -force
+
+# Fix for image origin differences (JK - July 28, 2020)
+echo mrtransform $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
+mrtransfrom $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
 
 echo dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
 dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
