@@ -130,8 +130,8 @@ dwi2mask $dwi_biascorrect_initial $brainmask_initial -fslgrad $dwi_bvec $dwi_bva
 echo mrtransform $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
 mrtransform $brainmask_initial -template $dwi_vol -interp nearest $brainmask_fix
 
-echo dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
-dwibiascorrect -mask $brainmask_initial -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
+echo dwibiascorrect -mask $brainmask_fix -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
+dwibiascorrect -mask $brainmask_fix -ants $dwi_vol $dwi_biascorrect_final -fslgrad $dwi_bvec $dwi_bval -force
 
 echo dwi2mask $dwi_biascorrect_final $brainmask_final -fslgrad $dwi_bvec $dwi_bval -force
 dwi2mask $dwi_biascorrect_final $brainmask_final -fslgrad $dwi_bvec $dwi_bval -force
