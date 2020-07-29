@@ -139,9 +139,6 @@ dwi2mask $dwi_biascorrect_final $brainmask_final -fslgrad $dwi_bvec $dwi_bval -f
 echo dtifit -k $dwi_biascorrect_final -o $eddy_dir/dti -m $brainmask_final -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
 dtifit -k $dwi_biascorrect_final -o $eddy_dir/dti -m $brainmask_final -r $eddy_dir/dwi.bvec -b $eddy_dir/dwi.bval
 
-#make biascorrect the final dwi to use 
-#mv $dwi_v
-
 done
 
 
